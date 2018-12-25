@@ -1,0 +1,11 @@
+@import "compass/css3";
+
+body { margin: 0; }
+
+svg {
+  display: block;
+  margin: 0 auto;
+  width: 100vmin; height: 100vmin;
+  background: #333;
+  cursor: pointer;
+}
