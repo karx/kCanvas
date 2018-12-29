@@ -165,3 +165,39 @@
   .contact-us-2 {
       font-weight: 800;
   }
+
+  .item {
+      height: 100vh;
+      width: 100vw;
+      background-size: cover;
+     
+  }
+  .item:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), #000000);
+  }
+
+  #img-1 {
+    background-image: url('./assets/Home Landing CRSL1 Copy.png');
+  }
+
+  #img-2 {
+    background-image: url('./assets/Home Landing CRSL2 Copy.png');
+  }
+  
+  #img-3 {
+    background-image: url('./assets/Home Landing CRSL3 Copy.png');
+  }
+  #img-4 {
+    background-image: url('./assets/Home Landing CRSL2 Copy.png');
+  }
+  
+  #myCanvas {
+      height: 100vh;
+      width: 100vw;
+  }
