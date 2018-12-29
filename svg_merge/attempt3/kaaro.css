@@ -1,0 +1,167 @@
+@font-face {
+    font-family: myFirstFont;
+    src: url(sansation_light.woff);
+  }
+
+.bike-packing {
+    display: flex;
+    flex-direction: column;
+}
+
+.k-card {
+    height: 100vh;
+    width: 100vw;
+    background-color: #010001;
+}
+
+.top-1 {
+    background-color: #cb8238;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), #000000);
+    position: relative;
+}
+
+.overlay-info {
+    
+}
+.overlay-title {
+    position: absolute;
+    top: 25.2vh;
+    left: 50vw;
+    width: 500.5px;
+    height: 42px;
+    font-family: 'Barlow';
+    font-size: 35px;
+    font-weight: bold;
+    font-style: normal;
+    font-stretch: condensed;
+    line-height: normal;
+    letter-spacing: normal;
+    color: #ffffff;
+}
+.overlay-title .text-style-1 {
+
+    font-weight: 200;
+  
+  }
+  .overlay-title-style2 {
+    font-weight: 200;
+  }
+
+  .overlay-details{
+      position: absolute;
+      top: 45.5vh;
+      left: 50vw;
+      width: 504.5px;
+
+      height: 144px;
+    
+      font-family: 'Barlow';
+    
+      font-size: 30px;
+    
+      font-weight: 200;
+    
+      font-style: normal;
+    
+      font-stretch: condensed;
+    
+      line-height: normal;
+    
+      letter-spacing: normal;
+    
+      color: #ffffff;
+  }
+  .overlay-st-2 {
+      font-weight: bold;
+  }
+  .eachImg {
+    width: 100vw;
+    height: 100vh;
+  }
+
+
+.overlay-tip-container {
+    position: absolute;
+      top: 93vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      align-items: center;
+      width:100%;
+    
+}
+  .overlay-tip {
+      
+      width: 115px;
+     height: 18px;
+    border-radius: 4px;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    background-color: rgba(0, 0, 0, 0.4);
+      font-family: 'Barlow';
+      font-size: 10px;
+      font-weight: 500;
+      font-style: normal;
+      font-stretch: normal;
+      line-height: normal;
+      letter-spacing: normal;
+      color: #ffffff
+  }
+
+
+  .top-4 {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      align-items: center;
+  }
+  .contact-1 {
+
+    width: auto;
+
+    height: 30px;
+  
+    font-family: 'Barlow';
+  
+    font-size: 25px;
+  
+    font-weight: 200;
+  
+    font-style: normal;
+  
+    font-stretch: normal;
+  
+    line-height: normal;
+  
+    letter-spacing: normal;
+  
+    color: #ffffff;
+  }
+
+  .contact-us-container {
+    width: auto;
+    height: 50px;
+    border-radius: 4px;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    background-color: #f5a623;
+    
+  }
+
+  .contact-us {
+      
+    width: auto;
+    margin: 0px 10px;
+    height: 42px;
+    font-family: 'Barlow';
+    font-size: 35px;
+    font-weight: 200;
+    font-style: normal;
+    font-stretch: condensed;
+    line-height: normal;
+    letter-spacing: normal;
+    color: #ffffff;
+  }
+  .contact-us-2 {
+      font-weight: 800;
+  }
