@@ -1,24 +1,15 @@
-var canvas = document.getElementById("myCanvas");
-var ctx = canvas.getContext("2d");
+import { kCanvas } from "../utils/mycanvas.js";
 
-function drawInit() {
-    for (let i =0 ; i < 50 ; i ++) {
-        ctx.moveTo(0, i*10);
-        ctx.lineTo(500, i*10);
-        ctx.stroke();
-    }
-    for (let i =0 ; i < 50 ; i ++) {
-        ctx.moveTo( i*10, 0);
-        ctx.lineTo(i*10, 500);
-        ctx.stroke();
-    }
-}
+var canvasHeight;
+var canvasWidth;
+var kC = new kCanvas("#myCanvas");
+
+
 
 function draw() {
 
     requestAnimationFrame(draw);
 }
 
-drawInit();
-
+kC.drawGrid();
 draw();
