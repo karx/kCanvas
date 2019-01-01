@@ -23,6 +23,9 @@ export class kCanvas {
       }
 
     drawGrid(xnum = 20, ynum = 20, showGridValues = true) {
+        this.ctx.save();
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+  
         this.ctx.strokeStyle = '#D3D3D3';
         for(let i=0;i<this.height; i += (this.height/ynum)) {
             this.ctx.moveTo(0, i);
@@ -49,5 +52,19 @@ export class kCanvas {
                 this.ctx.strokeText(Math.floor(i) + '', i, this.height, 20);    
             }
         }
+        this.ctx.restore();
+
+    }
+
+    clearCanvas() {
+        // Store the current transformation matrix
+        this.ctx.save();
+
+        // Use the identity matrix while clearing the canvas
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        this.ctx.clearRect(0, 0, this.width, this.height);
+
+        // Restore the transform
+        this.ctx.restore();
     }
 }
