@@ -22,17 +22,32 @@ export class kCanvas {
         return this.ctx;
       }
 
-    drawGrid(xnum = 20, ynum = 20) {
+    drawGrid(xnum = 20, ynum = 20, showGridValues = true) {
+        this.ctx.strokeStyle = '#D3D3D3';
         for(let i=0;i<this.height; i += (this.height/ynum)) {
             this.ctx.moveTo(0, i);
             this.ctx.lineTo(this.width, i);
             this.ctx.stroke();
+            
         }
         for (let i =0 ; i < this.width ; i += (this.width/xnum)) {
             this.ctx.moveTo(i, 0);
             this.ctx.lineTo(i, this.height);
             this.ctx.stroke();
         }
-        
+
+        if (showGridValues) {
+            this.ctx.font = '5px';
+            this.ctx.strokeStyle = "#d3d3ff";
+            
+            for(let i=0;i<this.height; i += (this.height/ynum)) {
+                this.ctx.strokeText(Math.floor(i) + '', 0, i, 20);
+                this.ctx.strokeText(Math.floor(i) + '', this.width - 20, i, 20);    
+            }
+            for(let i=0;i<this.width; i += (this.width/xnum)) {
+                this.ctx.strokeText(Math.floor(i) + '', i, 0 + 10, 20);
+                this.ctx.strokeText(Math.floor(i) + '', i, this.height, 20);    
+            }
+        }
     }
 }
