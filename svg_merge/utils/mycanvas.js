@@ -22,23 +22,28 @@ export class kCanvas {
         return this.ctx;
       }
 
-    drawGrid(xnum = 20, ynum = 20, showGridValues = true) {
+    drawGrid(xnum = 20, ynum = 20, showGrid = true, showGridValues = true) {
         this.ctx.save();
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-  
+        this.max_x = xnum;
+        this.max_y = ynum;
         this.ctx.strokeStyle = '#D3D3D3';
-        for(let i=0;i<this.height; i += (this.height/ynum)) {
-            this.ctx.moveTo(0, i);
-            this.ctx.lineTo(this.width, i);
-            this.ctx.stroke();
-            
+        // console.log(this.height/ynum);
+        if (showGrid) {
+            for(let i=0;i<this.height; i += (this.height/ynum)) {
+                this.ctx.moveTo(0, i);
+                this.ctx.lineTo(this.width, i);
+                this.ctx.stroke();
+                
+            }
+            for (let i =0 ; i < this.width ; i += (this.width/xnum)) {
+                this.ctx.moveTo(i, 0);
+                this.ctx.lineTo(i, this.height);
+                this.ctx.stroke();
+            }
+    
         }
-        for (let i =0 ; i < this.width ; i += (this.width/xnum)) {
-            this.ctx.moveTo(i, 0);
-            this.ctx.lineTo(i, this.height);
-            this.ctx.stroke();
-        }
-
+        
         if (showGridValues) {
             this.ctx.font = '5px';
             this.ctx.strokeStyle = "#d3d3ff";
@@ -56,6 +61,20 @@ export class kCanvas {
 
     }
 
+    drawBlock(gridX, gridY, colorIndex = 0) {
+        
+        const unit_x = (this.width/this.max_x) ;
+        const unit_y = (this.height/this.max_y) ;
+        const c_x = unit_x * gridX;
+        const c_y = unit_y * gridY;
+        this.ctx.fillStyle = this.getColor(colorIndex);
+        this.ctx.fillRect(c_x, c_y, unit_x, unit_y);
+
+        // console.log(c_x, c_y);
+        // console.log(unit_y);
+        
+    }
+
     clearCanvas() {
         // Store the current transformation matrix
         this.ctx.save();
@@ -66,5 +85,12 @@ export class kCanvas {
 
         // Restore the transform
         this.ctx.restore();
+    }
+
+    getColor(colorIndex) {
+        switch(colorIndex) {
+            case 0: return '#ECEFF1';
+            case 1: return '#ECEFF1';
+        }
     }
 }
