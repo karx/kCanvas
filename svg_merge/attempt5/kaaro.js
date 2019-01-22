@@ -101,10 +101,10 @@ function draw() {
 
 var antGrid = new LangtonAntGrid();
 
-kC.drawGrid(100,100, false);
+kC.drawGrid(500,500, false);
 
 kC.ctx.globalCompositeOperation = 'multiply';
-antGrid.init(100,100);
+antGrid.init(500,500);
 
 
 
