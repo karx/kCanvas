@@ -14,8 +14,11 @@ var currentPos = Object.assign({}, {
 
 class LangtonAntGrid {
     
+    
+
     constructor() {
-        
+        this.numberOfStates = 4;
+        this.stateTransitions = ['R', 'L', 'L ', 'R'];
     }
     
     init(x = 20, y =20) {
@@ -42,16 +45,19 @@ class LangtonAntGrid {
 
         // console.log(currentStatus);
         // first update current box
-        this.currentPosition.color = (this.currentPosition.color + 1)%2;
+
+
+        this.currentPosition.color = (this.currentPosition.color + 1)%(this.numberOfStates);
         this.grid[this.currentPosition.x][this.currentPosition.y].color = this.currentPosition.color;
         this.drawPosition(this.currentPosition);
         
 
         //move to next Box
-        if (currentStatus.color === 0) {
+        if(this.stateTransitions[currentStatus.color] === 'L') {
+        // if (currentStatus.color === 0) {
             this.currentPosition.heading = (this.currentPosition.heading + 1)%4;
             // console.log('right');
-        } else if (currentStatus.color === 1) {
+        } else if (this.stateTransitions[currentStatus.color] === 'R') {
             this.currentPosition.heading = (this.currentPosition.heading + 3)%4;
             // console.log('left');
         }

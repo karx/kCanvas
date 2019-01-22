@@ -90,7 +90,11 @@ export class kCanvas {
     getColor(colorIndex) {
         switch(colorIndex) {
             case 0: return '#ECEFF1';
-            case 1: return '#ECEFF1';
+            case 1: return '#FFEBEE';
+            case 2: return '#E8F5E9';
+            case 3: return '#E1F5FE';
+            // case 4: return '#ECEFF1';
+            // case 5: return '#ECEFF1';
         }
     }
 }
