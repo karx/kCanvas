@@ -6,8 +6,8 @@ var kC = new kCanvas("#myCanvas");
 class LangtonAntGrid {
     
     constructor() {
-        this.numberOfStates = 4;
-        this.stateTransitions = ['R', 'L', 'L ', 'R'];
+        this.numberOfStates = 7;
+        this.stateTransitions = ['R', 'R', 'L ', 'R','L','L','L'];
     }
     
     init(x = 20, y =20) {
