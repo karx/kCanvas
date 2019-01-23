@@ -273,7 +273,7 @@ introduce this line anywhere after ctx variable is loaded
 kC.ctx.globalCompositeOperation = '<your choice!>';
 ```
 
-My favoirite: 
+My favoirite: gu
 * set type as multiply, The pixels are of the top layer are multiplied with the corresponding pixel of the bottom layer. A darker picture is the result. 
 * choose all the colors for the Ants color as the same.
 
