@@ -1,21 +1,10 @@
 import { kCanvas } from "../utils/mycanvas.js";
 
-var canvasHeight;
-var canvasWidth;
 var kC = new kCanvas("#myCanvas");
 
-var leftPressed = false;
-var rightPressed = false;
-
-var currentPos = Object.assign({}, {
-    x:10,
-    y:10
-});
 
 class LangtonAntGrid {
     
-    
-
     constructor() {
         this.numberOfStates = 4;
         this.stateTransitions = ['R', 'L', 'L ', 'R'];
@@ -43,10 +32,6 @@ class LangtonAntGrid {
     updateGrid() {
         const currentStatus = Object.assign({}, this.currentPosition);
 
-        // console.log(currentStatus);
-        // first update current box
-
-
         this.currentPosition.color = (this.currentPosition.color + 1)%(this.numberOfStates);
         this.grid[this.currentPosition.x][this.currentPosition.y].color = this.currentPosition.color;
         this.drawPosition(this.currentPosition);
@@ -73,11 +58,7 @@ class LangtonAntGrid {
                 break;
         }
         this.currentPosition.color = this.grid[this.currentPosition.x][this.currentPosition.y].color;
-        // console.log(this.currentPosition);
         
-    }
-    paintGrid() {
-
     }
 
     getLog() {
@@ -89,23 +70,19 @@ class LangtonAntGrid {
 }
 
 
-function draw() {
-    // kC.clearCanvas();
-    // kC.drawGrid();
-    // draw2DPath();
-
-    antGrid.updateGrid();
-
-    requestAnimationFrame(draw);
-}
 
 var antGrid = new LangtonAntGrid();
-
-kC.drawGrid(500,500, false);
-
-kC.ctx.globalCompositeOperation = 'multiply';
 antGrid.init(500,500);
 
+kC.drawGrid(500,500, false);
+kC.ctx.globalCompositeOperation = 'color-burn';
 
+
+function draw() {
+
+    antGrid.updateGrid();
+    
+    requestAnimationFrame(draw);
+}
 
 draw();
