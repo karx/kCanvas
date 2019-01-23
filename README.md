@@ -20,7 +20,7 @@ The first thing that I noticed was that it was possible to set the width & heigh
 I chose to give them these using CSS. 100vw, 100vh. Simple
 Then, drew a line. Drew a ball. 
 The pixel density seemed very low. 
-Enter: window.devicePixelRatio
+> Enter: [window.devicePixelRatio](https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio)
 So lets setup an function setupCanvas to encapuslate all of this.
 
 ```
@@ -46,7 +46,7 @@ setupCanvas(canvasDomRef) {
 
 Also, its 2019. No fun having a static image there.
 We will paint!
-Enter: [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame)
+> Enter: [requestAnimationFrame](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame)
 
 for using request animation frame, the easist way is to do something like this:
 ```
@@ -265,7 +265,8 @@ class LangtonAntGrid {
 
 
 We will work on building more generic 'Turmite', but for now lets focus on our newly born Ant and more specifically on the backgound, our universe, the Canvas.
-Enter: [CanvasRenderingContext2D.globalCompositeOperation](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation)
+
+> Enter: [CanvasRenderingContext2D.globalCompositeOperation](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation)
 This can be used to determine the blending mode of colors. 
 introduce this line anywhere after ctx variable is loaded
 
