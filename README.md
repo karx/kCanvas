@@ -280,3 +280,9 @@ My favoirite: mutiply
 
 We see progressive darkenings of the path more taken!
 
+Note: I run a local server and then serve the js file. I use 
+
+```
+http-server .\. --cors=*
+```
+
