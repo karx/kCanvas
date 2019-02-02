@@ -5,8 +5,8 @@ To answer this question, we must really understand the current state of HTML Can
 If you have ever tried 'drawing' on a web page, the first thing that the search engine gives you is HTML Canvas.
 Well that is the 2019 definition of HTML canvas.
 Definition as in MDN:
-> The Canvas API provides a means for drawing graphics via JavaScript and the HTML '<canvas>'  element. Among other things, it can be used for animation, game  graphics, data visualization, photo manipulation, and real-time video  processing.
-> The Canvas API largely focuses on 2D graphics. The WebGL API, which also uses the '<canvas>' element, draws hardware-accelerated 2D and 3D graphic
+> The Canvas API provides a means for drawing graphics via JavaScript and the HTML \'<canvas>\'  element. Among other things, it can be used for animation, game  graphics, data visualization, photo manipulation, and real-time video  processing.
+> The Canvas API largely focuses on 2D graphics. The WebGL API, which also uses the \'<canvas>\' element, draws hardware-accelerated 2D and 3D graphic
 
 
 ## Why have you not used HTML Canvas?
