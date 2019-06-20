@@ -1,6 +1,8 @@
-#Turmite
+# Langton's Ant in 3d
 
 # Aim
-To build an interface to spawn a turmite on the canvas.
+This page would use a-frame to simulate a 2-D termite, in a 3D world.
 
-Turmite, from Langton's Ant
+To leverage the extra dimention we have, we keep on increasing the size of the block, if the termite revisits.
+
+[Live Page](kCanvas/langton3d/kaaro.html)
