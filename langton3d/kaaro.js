@@ -1,4 +1,8 @@
 // 
+var antGrid;
+var grid;
+
+
 class LangtonAntGrid {
     
     constructor() {
@@ -7,7 +11,8 @@ class LangtonAntGrid {
     }
     
     init(x = 20, y =20, z= 20) {
-        this.grid = [];
+        console.log('init Begun');
+        grid = [];
         this.max_x = x;
         this.max_y = y;
         this.max_z = z;
@@ -19,25 +24,31 @@ class LangtonAntGrid {
             heading: 0,
             orientation: 5
         });
-        for (let i=0; i<x; i++) {
-            this.grid[i] = [];
-            for (let j=0; j<y; j++) {
-                this.grid[i][j] = [];
-                for (let k=0;k<z;k++) {
-                    this.grid[i][j][k] = Object.assign({}, {
+        for (let i=-x; i<x; i++) {
+            grid[i] = [];
+            for (let j=-y; j<y; j++) {
+                grid[i][j] = [];
+                for (let k=-z;k<z;k++) {
+                    grid[i][j][k] = Object.assign({}, {
                         color: 0
                     });
                 }
             }
         }
+        console.log('init End');
+        console.log(grid);
+
+
     }
     updateGrid() {
+        console.log('update Begun');
         const currentStatus = Object.assign({}, this.currentPosition);
 
         this.currentPosition.color = (this.currentPosition.color + 1)%(this.numberOfStates);
-        this.grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color = this.currentPosition.color;
+        grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color = this.currentPosition.color;
         this.drawPosition(this.currentPosition);
         
+        console.log('doneFirstBox?');
 
         //move to next Box
         // getNextHeadingFromColorAndHeading(this.currentStatus)
@@ -67,12 +78,14 @@ class LangtonAntGrid {
                 break;
             case 5: this.currentPosition.z--;
         }
-        this.currentPosition.color = this.grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color;
+        console.log(this.currentPosition.x);
+        console.log(grid[this.currentPosition.x]);
+        this.currentPosition.color = grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color;
         
     }
 
     getLog() {
-        console.log(this.grid);
+        console.log(grid);
     }
     drawPosition(position) {
         drawBox(position);
@@ -80,10 +93,9 @@ class LangtonAntGrid {
     }
 }
 
+antGrid = new LangtonAntGrid();
+antGrid.init(50,50);
 
-
-var antGrid = new LangtonAntGrid();
-antGrid.init(500,500);
 
 // kC.drawGrid(500,500, false);
 // kC.ctx.globalCompositeOperation = 'color-burn';
@@ -99,10 +111,28 @@ function draw() {
 draw();
 
 function drawBox(position) {
-    var newBox = document.createElement('a-box');
-    newBox.setAttribute('position', `${position.x} ${position.y} ${position.z}`);
-    newBox.setAttribute('color', position.color === 0 ? "#4CC3D9" : "#D9C34C");
-    document.getElementById('mainFrame').appendChild(newBox);
+    if (grid[position.x][position.y][position.z].ent)
+    {
+        var oldBox = grid[position.x][position.y][position.z].ent;
+        var scale = grid[position.x][position.y][position.z].scale + 0.1;
+        grid[position.x][position.y][position.z].scale = scale;
 
-
+        // document.getElementById(`kLang-3d-${position.x}-${position.y}-${position.z}`);
+        oldBox.setAttribute('color', position.color === 0 ? "#4CC3D9" : "#D9C34C");
+        oldBox.setAttribute('scale', `${scale} ${scale} ${scale}`);
+    }
+    else {
+        var newBox = document.createElement('a-box');
+        var scale = 0.1;
+        newBox.setAttribute('position', `${position.x} ${position.y} ${position.z}`);
+        newBox.setAttribute('scale', `${scale} ${scale} ${scale}`);
+        newBox.setAttribute('color', position.color === 0 ? "#4CC3D9" : "#D9C34C");
+        newBox.setAttribute('id',`kLang-3d-${position.x}-${position.y}-${position.z}`);
+        grid[position.x][position.y][position.z].scale = scale;
+        grid[position.x][position.y][position.z].ent = newBox;
+        document.getElementById('mainFrame').appendChild(newBox);
+        
+    }
+    
+    console.log('done A Box .');
 }
