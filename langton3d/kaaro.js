@@ -2,12 +2,13 @@
 var antGrid;
 var grid;
 
+var colorsToBeUsed = ["#4CC3D9" , "#D9C34C", "#4CD9C3", "#D94CC3"];
 
 class LangtonAntGrid {
     
     constructor() {
-        this.numberOfStates = 2;
-        this.stateTransitions = ['R', 'L'];
+        this.numberOfStates = 4;
+        this.stateTransitions = ['L', 'L','R', 'R'];
     }
     
     init(x = 20, y =20, z= 20) {
@@ -114,19 +115,21 @@ function drawBox(position) {
     if (grid[position.x][position.y][position.z].ent)
     {
         var oldBox = grid[position.x][position.y][position.z].ent;
-        var scale = grid[position.x][position.y][position.z].scale + 0.1;
+        var scale = grid[position.x][position.y][position.z].scale * 0.99;
         grid[position.x][position.y][position.z].scale = scale;
 
         // document.getElementById(`kLang-3d-${position.x}-${position.y}-${position.z}`);
-        oldBox.setAttribute('color', position.color === 0 ? "#4CC3D9" : "#D9C34C");
-        oldBox.setAttribute('scale', `${scale} ${scale} ${scale}`);
+        
+        oldBox.setAttribute('color', getColorFromColorIndex(position.color));
+
+        oldBox.setAttribute('scale', `${1-scale} ${1-scale} ${1-scale}`);
     }
     else {
         var newBox = document.createElement('a-box');
-        var scale = 0.1;
+        var scale = 0.99;
         newBox.setAttribute('position', `${position.x} ${position.y} ${position.z}`);
-        newBox.setAttribute('scale', `${scale} ${scale} ${scale}`);
-        newBox.setAttribute('color', position.color === 0 ? "#4CC3D9" : "#D9C34C");
+        newBox.setAttribute('scale', `${1-scale} ${1-scale} ${1-scale}`);
+        newBox.setAttribute('color', getColorFromColorIndex(position.color));
         newBox.setAttribute('id',`kLang-3d-${position.x}-${position.y}-${position.z}`);
         grid[position.x][position.y][position.z].scale = scale;
         grid[position.x][position.y][position.z].ent = newBox;
@@ -135,4 +138,8 @@ function drawBox(position) {
     }
     
     console.log('done A Box .');
+}
+
+function getColorFromColorIndex(colorIndex) {
+    return colorsToBeUsed[colorIndex];
 }
