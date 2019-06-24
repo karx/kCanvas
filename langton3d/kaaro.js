@@ -42,46 +42,6 @@ class LangtonAntGrid {
 
     }
     updateGrid() {
-        // console.log('update Begun');
-        // const currentStatus = Object.assign({}, this.currentPosition);
-
-        // this.currentPosition.color = (this.currentPosition.color + 1)%(this.numberOfStates);
-        // grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color = this.currentPosition.color;
-        // this.drawPosition(this.currentPosition);
-        
-        // console.log('doneFirstBox?');
-
-        // //move to next Box
-        // // getNextHeadingFromColorAndHeading(this.currentStatus)
-
-
-        // if(this.stateTransitions[currentStatus.color] === 'L') {
-        // // if (currentStatus.color === 0) {
-        //     this.currentPosition.heading = (this.currentPosition.heading + 1)%4;
-        //     // console.log('right');
-        // } else if (this.stateTransitions[currentStatus.color] === 'R') {
-        //     this.currentPosition.heading = (this.currentPosition.heading + 3)%4;
-        //     // console.log('left');
-        // } else if (this.stateTransitions[currentStatus.color] === 'U') {
-        //     console.log("lol");
-        // }
-
-        // switch(this.currentPosition.heading) {
-        //     case 0: this.currentPosition.y--;
-        //         break;
-        //     case 1: this.currentPosition.x++;
-        //         break;
-        //     case 2: this.currentPosition.y++;
-        //         break;
-        //     case 3: this.currentPosition.x--;
-        //         break;
-        //     case 4: this.currentPosition.z++;
-        //         break;
-        //     case 5: this.currentPosition.z--;
-        // }
-        console.log("Empty Update");
-        // console.log(grid[this.currentPosition.x]);
-        // this.currentPosition.color = grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color;
         
     }
 
@@ -97,8 +57,7 @@ class LangtonAntGrid {
         console.log(grid);
     }
     drawPosition(position) {
-        // drawBox(position);
-        // kC.drawBlock(position.x, position.y, position.color);    
+        
     }
 }
 
@@ -121,9 +80,11 @@ class LangtonTermite {
     }
 
     colorAndupdatePosition() {
+        
         console.log('update Begun');
         const currentStatus = Object.assign({}, this.currentPosition);
-
+        if (!grid[this.currentPosition.x] || !grid[this.currentPosition.x][this.currentPosition.y] || !grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z])
+        return;
 
         // If we Want it to interact with the community (no race):
         var colorFromGrid = antGrid.getColorOfGrid(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
@@ -174,10 +135,12 @@ class LangtonTermite {
                 break;
         }
         console.log(this.currentPosition.x);
-        
-        this.currentPosition.color = "#E3E3E3";
+        if (!grid[this.currentPosition.x] || !grid[this.currentPosition.x][this.currentPosition.y] || !grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z])
+            return;
+        // this.currentPosition.color = "#E3E3E3";
         drawBox(this.currentPosition);
         this.currentPosition.color = grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color;
+        console.log("New color : " + this.currentPosition.color);
     }
     _updatePimaryAxis( updateDelta) {
         switch(this.currentPosition.orientation) {
