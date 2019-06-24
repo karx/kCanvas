@@ -12,10 +12,10 @@
 </head>
 
 <body>
-    <a-scene id="mainFrame">
-            
+    <a-scene id="mainFrame" background="color: black">
+
             <a-entity id="rig" position="0 0 20">
-                <a-entity id="camera" camera look-controls wasd-controls="acceleration:199"></a-entity>
+                <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true adAxis:y"></a-entity>
             </a-entity>
     </a-scene>
     

@@ -215,13 +215,14 @@ antGrid = new LangtonAntGrid();
 antGrid.init(100,100, 100);
 
 var allTermites = [
-    new LangtonTermite(1,0,0),
-    new LangtonTermite(0,0,0, 1),
+    new LangtonTermite(1,0,0,5, ['L', 'L', 'R' , 'R'], 4),
+    new LangtonTermite(1,0,1,5, ['L', 'L', 'R' , 'R'], 4),
+    // new LangtonTermite(0,0,0, 1),
     
-    new LangtonTermite(10,10,0, 5, ['L', 'L', 'R', 'R'], 4),
-    new LangtonTermite(2,10,4, 1, ['L', 'L', 'R', 'R'], 4),
-    new LangtonTermite(4,5,5, 1, ['R', 'L', 'R'], 3),
-    new LangtonTermite(-2,-7, -2, 5, ['L', 'L', 'R', 'R'], 4),
+    // new LangtonTermite(10,10,0, 5, ['L', 'L', 'R', 'R'], 4),
+    // new LangtonTermite(2,10,4, 1, ['L', 'L', 'R', 'R'], 4),
+    // new LangtonTermite(4,5,5, 1, ['R', 'L', 'R'], 3),
+    // new LangtonTermite(-2,-7, -2, 5, ['L', 'L', 'R', 'R'], 4),
 
     
 ];
