@@ -178,10 +178,10 @@ antGrid = new LangtonAntGrid();
 antGrid.init(100,100, 100);
 
 var allTermites = [
-    new LangtonTermite(1,0,0,5, ['L', 'L', 'R' , 'R'], 4),
-    new LangtonTermite(20,0,20,1, ['L', 'L', 'R' , ], 3),
-    new LangtonTermite(-20,0,20,1, ['L', 'R', 'R' , ], 3),
-    new LangtonTermite(1,0,40,5, ['L', 'R' ], 2),
+    new LangtonTermite(1,0,-10,5, ['L', 'L', 'R' , 'R'], 4),
+    new LangtonTermite(30,0,20,1, ['L', 'L', 'R' , ], 3),
+    new LangtonTermite(-40,0,20,1, ['L', 'R', 'R' , ], 3),
+    new LangtonTermite(1,0,50,5, ['L', 'R' ], 2),
     // new LangtonTermite(0,0,0, 1),
     
     // new LangtonTermite(10,10,0, 5, ['L', 'L', 'R', 'R'], 4),
@@ -213,7 +213,7 @@ function drawBox(position) {
     if (grid[position.x][position.y][position.z].ent)
     {
         var oldBox = grid[position.x][position.y][position.z].ent;
-        var scale = grid[position.x][position.y][position.z].scale * 0.99;
+        var scale = grid[position.x][position.y][position.z].scale * 0.85;
         grid[position.x][position.y][position.z].scale = scale;
 
         // document.getElementById(`kLang-3d-${position.x}-${position.y}-${position.z}`);
@@ -224,7 +224,7 @@ function drawBox(position) {
     }
     else {
         var newBox = document.createElement('a-box');
-        var scale = 0.99;
+        var scale = 0.85;
         newBox.setAttribute('position', `${position.x} ${position.y} ${position.z}`);
         newBox.setAttribute('scale', `${1-scale} ${1-scale} ${1-scale}`);
         newBox.setAttribute('color', getColorFromColorIndex(position.color));

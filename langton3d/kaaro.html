@@ -13,7 +13,9 @@
 
 <body>
     <a-scene id="mainFrame" background="color: black">
-
+        <a-entity light="type: ambient; color: #EEE"></a-entity>
+        <a-entity light="type: point; color: #FFF; intensity: 0.4" position="-1 -10 -2"></a-entity>
+            
             <a-entity id="rig" position="0 0 20">
                 <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true adAxis:y"></a-entity>
             </a-entity>
