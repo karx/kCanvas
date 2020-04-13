@@ -8,7 +8,7 @@ class LangtonAntGrid {
     
     constructor() {
         this.numberOfStates = 4;
-        this.stateTransitions = ['L', 'L','R', 'R'];
+        this.stateTransitions = ['L', 'L','R', 'R']; //default value
     }
     
     init(x = 20, y =20, z= 20) {
@@ -178,6 +178,8 @@ antGrid = new LangtonAntGrid();
 antGrid.init(100,100, 100);
 
 var allTermites = [
+    /* ---- EDIT THIS TO CUSTOMIZE THE TERMITE RULE SET -------- */
+
     new LangtonTermite(1,0,0,5, ['L', 'L', 'R' , 'R'], 4),
     new LangtonTermite(20,0,20,1, ['L', 'L', 'R' , ], 3),
     new LangtonTermite(-20,0,20,1, ['L', 'R', 'R' , ], 3),
