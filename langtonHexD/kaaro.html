@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="/node_modules/aframe/dist/aframe.js"></script>
+     
+    <link rel="stylesheet" href="./kaaro.css">
+    <title>kCanvas - 3D Langoton's Ant</title>
+</head>
+
+<body>
+    <a-scene id="mainFrame" background="color: black">
+        <a-entity light="type: ambient; color: #EEE"></a-entity>
+        <a-entity light="type: point; color: #FFF; intensity: 0.4" position="-1 -10 -2"></a-entity>
+            
+            <a-entity id="rig" position="0 0 20">
+                <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true form"></a-entity>
+            </a-entity>
+    </a-scene>
+    
+    <script  src="./kaaro.js"></script>
+</body>
+
+</html>
