@@ -178,19 +178,12 @@ antGrid = new LangtonAntGrid();
 antGrid.init(100,100, 100);
 
 var allTermites = [
-<<<<<<< HEAD
-    new LangtonTermite(1,0,-10,5, ['L', 'L', 'R' , 'R'], 4),
-    new LangtonTermite(30,0,20,1, ['L', 'L', 'R' , ], 3),
-    new LangtonTermite(-40,0,20,1, ['L', 'R', 'R' , ], 3),
-    new LangtonTermite(1,0,50,5, ['L', 'R' ], 2),
-=======
     /* ---- EDIT THIS TO CUSTOMIZE THE TERMITE RULE SET -------- */
 
     new LangtonTermite(1,0,0,5, ['L', 'L', 'R' , 'R'], 4),
     new LangtonTermite(20,0,20,1, ['L', 'L', 'R' , ], 3),
     new LangtonTermite(-20,0,20,1, ['L', 'R', 'R' , ], 3),
     new LangtonTermite(1,0,40,5, ['L', 'R' ], 2),
->>>>>>> f0172ebb78e5d04b328988c3dc6702e334f56240
     // new LangtonTermite(0,0,0, 1),
     
     // new LangtonTermite(10,10,0, 5, ['L', 'L', 'R', 'R'], 4),
