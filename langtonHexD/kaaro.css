@@ -1,5 +1,29 @@
 
+body {
+    position: relative;
+}
 #myCanvas {
     height: 100vh;
     width: 100vw;
+}
+
+.input-container {
+    position: absolute;
+    height: 200px;
+    width: 100%;
+    bottom: 0px;
+    background-color: rgba(128, 32, 128, 0.3);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+}
+.inputBoxContainer {
+    width: 60%;
+    height: 50%;
+}
+#input-rules {
+    width: 100%;
+    height: 80%;
+    font-size: 50px;
 }

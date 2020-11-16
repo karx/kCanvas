@@ -82,12 +82,14 @@ class LangtonTermite {
         plane: plane,
       }
     );
+    this.age = 0;
   }
 
   init() {}
 
   colorAndupdatePosition() {
     console.log("update Begun");
+    this.age++;
     const currentStatus = Object.assign({}, this.currentPosition);
 
     //checks if there is something on the grid. I.E undefined checks.
@@ -177,7 +179,7 @@ var allTermites = [
   /* ---- EDIT THIS TO CUSTOMIZE THE TERMITE RULE SET -------- */
 
 //   new LangtonTermite(1, 0, 4, ["L", "R"]),
-  new LangtonTermite(0, 0, 0, ["R1", "R2", "N", "U", "R2", "R1", "L2"], 'xyz'),
+  // new LangtonTermite(0, 0, 0, ["R1", "R2", "N", "U", "R2", "R1", "L2"], 'xyz'),
 //   new LangtonTermite(0, 0, 0, ["L", "R"], 'xyz'),
   // new LangtonTermite(0,0,0, 1),
 ];
@@ -195,8 +197,6 @@ function draw() {
 //   }, 1000);
     requestAnimationFrame(draw);
 }
-
-draw();
 
 function drawBox(position) {
   if (
@@ -238,6 +238,7 @@ function drawBox(position) {
 }
 
 function getColorFromColorIndex(colorIndex) {
+  colorIndex = colorIndex%colorsToBeUsed.length;
   return colorsToBeUsed[colorIndex];
 }
 
@@ -528,3 +529,51 @@ function getDirectionFromHeading3d(heading) {
     }
   }
   
+
+//Custom Input
+document.getElementById('input-rules').addEventListener('keyup', (event) => {
+  if(event.key === 'Enter' && event.target.value !== '') {
+    let termiteString = event.target.value;
+    let termiteTrasitions = termiteString.toUpperCase().split(' ');
+    allTermites.push(
+      new LangtonTermite(0, 0, 0, termiteTrasitions, 'xyz')
+    );
+
+    console.log({allTermites});
+    updateCurrentAntListDOM();
+    event.target.value = '';
+  }
+})
+document.addEventListener('keyup', event => {
+  if(event.key === 'I') {
+    let  inputContainer = document.getElementById('input-container');
+    let isShow = inputContainer.style.display;
+    if (isShow === "none") {
+      inputContainer.style.display = 'flex';
+    } else {
+      inputContainer.style.display = 'none';
+    }
+    console.log({isShow});
+  }
+})
+
+function updateCurrentAntListDOM() {
+  let antListHTML = `<ul>`;
+  allTermites.forEach(ant => {
+    let eachAntDOM = ``;
+    console.log(ant);
+    ant.stateTransitions.forEach((transitionVal, i) => {
+      eachAntDOM += `<span style="color:${getColorFromColorIndex(i)}"> ${transitionVal} </span>`;
+    });
+    antListHTML += `<li> ${eachAntDOM} </li>`;
+  });
+  antListHTML += `</ul>`;
+
+  document.getElementById('currentAnts').innerHTML = antListHTML;
+}
+
+
+updateCurrentAntListDOM();
+
+draw();
+
