@@ -2,7 +2,7 @@
 var antGrid;
 var grid;
 
-var colorsToBeUsed = ["#4CC3D9" , "#D9C34C", "#4CD9C3", "#D94CC3"];
+var colorsToBeUsed = ["#12130f","#5b9279","#eae6e5","#8fcb9b","#8f8073"];
 
 class LangtonAntGrid {
     
@@ -12,7 +12,7 @@ class LangtonAntGrid {
     }
     
     init(x = 20, y =20, z= 20) {
-        console.log('init Begun');
+        // console.log('init Begun');
         grid = [];
         this.max_x = x;
         this.max_y = y;
@@ -36,8 +36,8 @@ class LangtonAntGrid {
                 }
             }
         }
-        console.log('init End');
-        console.log(grid);
+        // console.log('init End');
+        // console.log(grid);
 
 
     }
@@ -81,7 +81,7 @@ class LangtonTermite {
 
     colorAndupdatePosition() {
         
-        console.log('update Begun');
+        // console.log('update Begun');
         const currentStatus = Object.assign({}, this.currentPosition);
         if (!grid[this.currentPosition.x] || !grid[this.currentPosition.x][this.currentPosition.y] || !grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z])
         return;
@@ -98,7 +98,7 @@ class LangtonTermite {
 
         drawBox(this.currentPosition);
         
-        console.log('doneFirstBox?');
+        // console.log('doneFirstBox?');
 
         //move to next Box
         // getNextHeadingFromColorAndHeading(this.currentStatus)
@@ -113,7 +113,7 @@ class LangtonTermite {
         } else if (this.stateTransitions[currentStatus.color] === 'U') {
             // TODO: make this shiz 3d
             //  Would need to add orientation. i.e direction of tangent.
-            console.log("lol");
+            // console.log("lol");
         }
 
         switch(this.currentPosition.heading) {
@@ -134,13 +134,13 @@ class LangtonTermite {
                 this._updateSecondaryAxis(-1);
                 break;
         }
-        console.log(this.currentPosition.x);
+        // console.log(this.currentPosition.x);
         if (!grid[this.currentPosition.x] || !grid[this.currentPosition.x][this.currentPosition.y] || !grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z])
             return;
         // this.currentPosition.color = "#E3E3E3";
         drawBox(this.currentPosition);
         this.currentPosition.color = grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color;
-        console.log("New color : " + this.currentPosition.color);
+        // console.log("New color : " + this.currentPosition.color);
     }
     _updatePimaryAxis( updateDelta) {
         switch(this.currentPosition.orientation) {
@@ -180,10 +180,10 @@ antGrid.init(100,100, 100);
 var allTermites = [
     /* ---- EDIT THIS TO CUSTOMIZE THE TERMITE RULE SET -------- */
 
-    new LangtonTermite(1,0,0,5, ['L', 'L', 'R' , 'R'], 4),
-    new LangtonTermite(20,0,20,1, ['L', 'L', 'R' , ], 3),
-    new LangtonTermite(-20,0,20,1, ['L', 'R', 'R' , ], 3),
-    new LangtonTermite(1,0,40,5, ['L', 'R' ], 2),
+    new LangtonTermite(1,0,0,5, ['L', 'R', 'R' , 'L'], 4),
+    // new LangtonTermite(20,0,20,1, ['L', 'L', 'R' , ], 3),
+    // new LangtonTermite(-20,0,20,1, ['L', 'R', 'R' , ], 3),
+    // new LangtonTermite(1,0,40,5, ['L', 'R' ], 2),
     // new LangtonTermite(0,0,0, 1),
     
     // new LangtonTermite(10,10,0, 5, ['L', 'L', 'R', 'R'], 4),
@@ -237,7 +237,7 @@ function drawBox(position) {
         
     }
     
-    console.log('done A Box .');
+    // console.log('done A Box .');
 
 }
 
