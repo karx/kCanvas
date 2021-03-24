@@ -2,7 +2,7 @@
 var antGrid;
 var grid;
 
-var colorsToBeUsed = ["#4CC3D9", "#D9C34C", "#4CD9C3", "#D94CC3"];
+var colorsToBeUsed = ["-324683-8c916f-486084-11160f-8c916f".split('-').map(x => `#${x}`)];
 
 class LangtonAntGrid {
   constructor() {
@@ -173,13 +173,13 @@ class LangtonTermite {
 }
 
 antGrid = new LangtonAntGrid();
-antGrid.init(50, 50, 50);
+antGrid.init(90, 90, 90);
 
 var allTermites = [
   /* ---- EDIT THIS TO CUSTOMIZE THE TERMITE RULE SET -------- */
 
-//   new LangtonTermite(1, 0, 4, ["L", "R"]),
-  // new LangtonTermite(0, 0, 0, ["R1", "R2", "N", "U", "R2", "R1", "L2"], 'xyz'),
+  // new LangtonTermite(1, 0, 4, ["L", "R"]),
+  new LangtonTermite(0, 0, 0, ["R1", "R2", "N", "U", "R2", "R1", "L2"], 'xyz'),
 //   new LangtonTermite(0, 0, 0, ["L", "R"], 'xyz'),
   // new LangtonTermite(0,0,0, 1),
 ];
