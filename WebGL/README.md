@@ -1,30 +1,22 @@
-## WebGL
-Things might get a little bit math-y in the midst of this, but why else did you pay so much money to learn about Matrices and Calculus.
+# WebGL Experiments
 
-The day is here.
-But before we are able to get to the fun stuff. Lets first discuss what would we be trying to do, the current effort we did regarding the same, and then conclude by starting with WebGL.
+This directory contains a collection of WebGL experiments, each in its own subdirectory.
 
-## Aim
-Our aim, simply put is
-> to have mathematical/computational manifestations of our visualizations!
+## Experiment Structure
 
-Or to have tools, skills and knowledge that we could use to draw/depict any visualization I want.
+Each experiment should follow a consistent structure:
 
-## Current Efforts
-So now is the time to first tell you about OpenGL. You must have seen/heard about it. To define, 
-> OpenGL is* a specification describing an abstract API for drawing 2D and 3D graphics.
+-   **`kaaro.html`**: The main HTML file for the experiment.
+-   **`kaaro.css`**: The CSS file for styling the experiment.
+-   **`kaaro.js`**: The JavaScript file containing the experiment's logic.
 
-OpenGL is an evolving API specification, regularly released by the Khronos Group, each of which extends the API to support various new features. 
-In theory, all the implementation of these specifications can be done using entirely software. 
+## Setting Up a New Experiment
 
-Then, now we have something known as **WebGL**. Now WebGL is a JavaScript API for doing these fun stuff, based on OpenGL ES 3.0. Now OpenGL ES is basically a mobile optimised version of OpenGL, but lets now worry about that. 
-WebGL now. Let's talk and understand more about WebGL before we move on. 
+To create a new experiment, follow these steps:
 
-## Getting started with WebGL
-[Getting started with WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Tutorial/Getting_started_with_WebGL)
-Attempt 6 closely follows this tutorial from MDN
-
-
-## Ecosystem
-WebGL itself might be too tedious to directly use without having a bunch of helper functions. three.js, BabylonJS, etc are examples of such libraries.
-
+1.  **Create a new directory** for your experiment within the `WebGL` directory. For example, `WebGL/MyNewExperiment`.
+2.  **Copy the template files** from an existing experiment, such as `WebGL/triangle`, into your new directory.
+3.  **Modify the `kaaro.html` file** to include any necessary scripts or libraries. Use the `importmap` to manage your dependencies.
+4.  **Write your experiment's logic** in the `kaaro.js` file.
+5.  **Add any necessary styles** to the `kaaro.css` file.
+6.  **Create a Playwright test** for your experiment in the `tests` directory. This will help to ensure that your experiment is working correctly and to prevent regressions.

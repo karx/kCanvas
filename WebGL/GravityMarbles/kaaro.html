@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="./kaaro.css">
+    <title>GravityMarbles</title>
+</head>
+<body>
+    <div id="ui">
+        <label for="level-select">Choose a level:</label>
+        <select name="levels" id="level-select">
+            <option value="11">Small</option>
+            <option value="21">Medium</option>
+            <option value="31">Large</option>
+        </select>
+        <button id="generate-button">Generate New Maze</button>
+    </div>
+    <canvas id="glCanvas" width="640" height="480"></canvas>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.138.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.138.0/examples/jsm/",
+                "cannon-es": "https://unpkg.com/cannon-es@0.19.0/dist/cannon-es.js",
+                "three-nodes/": "https://unpkg.com/three-nodes@0.138.0/"
+            }
+        }
+    </script>
+    <script type="module" src="./kaaro.js" ></script>
+</body>
+</html>
