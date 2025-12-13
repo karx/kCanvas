@@ -20,6 +20,78 @@
                 <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true adAxis:y"></a-entity>
             </a-entity>
     </a-scene>
+
+    <div class="hud" id="hud">
+        <div class="hud__bar">
+            <div class="hud__title">
+                <div class="hud__name">Langton 3D</div>
+                <div class="hud__hint">WASD/Arrows + mouse to move • Space pause • N step • R reset</div>
+            </div>
+            <div class="hud__controls">
+                <button class="hud__btn" id="btn-toggle" type="button">Pause</button>
+                <button class="hud__btn" id="btn-step" type="button">Step</button>
+                <button class="hud__btn hud__btn--danger" id="btn-reset" type="button">Reset</button>
+                <label class="hud__label" title="Simulation steps per frame">
+                    Speed
+                    <input id="speed" type="range" min="1" max="30" value="1" />
+                    <span class="hud__value" id="speedValue">1</span>
+                </label>
+                <div class="hud__stat" id="simStatus"></div>
+            </div>
+        </div>
+
+        <aside class="drawer" id="antDrawer">
+            <div class="drawer__header">
+                <div class="drawer__title">Ants <span class="drawer__badge" id="antCount">0</span></div>
+                <button class="hud__btn" id="btn-toggle-spawn" type="button">Add Ant</button>
+            </div>
+
+            <div class="drawer__content">
+                <div class="antList" id="antList"></div>
+
+                <form class="spawn" id="spawnForm" autocomplete="off">
+                    <div class="spawn__row">
+                        <label class="spawn__label">
+                            Name
+                            <input class="spawn__input" id="spawnName" type="text" placeholder="Ant A" />
+                        </label>
+                    </div>
+                    <div class="spawn__row spawn__row--grid">
+                        <label class="spawn__label">
+                            X
+                            <input class="spawn__input" id="spawnX" type="number" value="0" />
+                        </label>
+                        <label class="spawn__label">
+                            Y
+                            <input class="spawn__input" id="spawnY" type="number" value="0" />
+                        </label>
+                        <label class="spawn__label">
+                            Z
+                            <input class="spawn__input" id="spawnZ" type="number" value="0" />
+                        </label>
+                        <label class="spawn__label">
+                            Orientation
+                            <select class="spawn__input" id="spawnOrientation">
+                                <option value="5" selected>5 (XY plane)</option>
+                                <option value="1">1 (YZ plane)</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="spawn__row">
+                        <label class="spawn__label">
+                            Rule (space/comma separated)
+                            <input class="spawn__input" id="spawnRule" type="text" value="L R R L" />
+                        </label>
+                        <div class="spawn__help">Example: <code>L R</code> or <code>L R R L</code> (states = token count)</div>
+                    </div>
+                    <div class="spawn__row spawn__row--actions">
+                        <button class="hud__btn" id="btn-spawn" type="submit">Spawn</button>
+                        <div class="spawn__error" id="spawnError" aria-live="polite"></div>
+                    </div>
+                </form>
+            </div>
+        </aside>
+    </div>
     
     <script  src="./kaaro.js"></script>
 </body>
