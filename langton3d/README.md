@@ -35,6 +35,13 @@ And deploy.
 Use the `Share` button in the HUD to copy a URL containing the current preset (ants + their config, and sim settings).
 Opening a shared URL loads the preset automatically via the `?p=` query param.
 
+## TODO (Web Presence)
+- Add proper `apple-touch-icon.png` (180×180) and PNG favicons (16/32/192/512) + reference them in `kaaro.html` and `site.webmanifest`.
+- Decide canonical URL per host (Netlify vs GitHub Pages) and set `link rel="canonical"` + `og:url` accordingly.
+- Add `sitemap.xml` and `robots.txt` at the repo root for deployments.
+- Add a lightweight landing page at `/` instead of redirecting straight into the sim (optional).
+- Add a short “How to use controls” section with screenshots/GIFs.
+
 
 #### How to deploy (using Github pages!)
 ##### Step 1:

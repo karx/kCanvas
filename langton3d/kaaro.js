@@ -20,6 +20,11 @@ var sim = {
     }
 };
 
+var ui = {
+    shareUrl: '',
+    presets: []
+};
+
 class LangtonAntGrid {
     
     constructor() {
@@ -426,9 +431,21 @@ function setupHud() {
     var toggleSpawnEl = document.getElementById('btn-toggle-spawn');
     var shareEl = document.getElementById('btn-share');
     var snapshotEl = document.getElementById('btn-snapshot');
+    var fullscreenEl = document.getElementById('btn-fullscreen');
     var colorsEl = document.getElementById('spawnColors');
+    var sharePanelEl = document.getElementById('sharePanel');
+    var shareUrlEl = document.getElementById('shareUrl');
+    var copyShareEl = document.getElementById('btn-copy-share');
+    var loadPresetEl = document.getElementById('loadPreset');
+    var loadPresetBtnEl = document.getElementById('btn-load-preset');
+    var presetListEl = document.getElementById('presetList');
+    var helpBtnEl = document.getElementById('btn-help');
+    var helpModalEl = document.getElementById('helpModal');
+    var helpCloseEl = document.getElementById('btn-close-help');
+    var helpDontShowEl = document.getElementById('helpDontShow');
+    var sharePanelBtnEl = document.getElementById('btn-sharepanel');
 
-    if (!speedEl || !toggleEl || !stepEl || !resetEl || !antListEl || !antCountEl || !simStatusEl || !spawnFormEl || !spawnErrorEl || !toggleSpawnEl || !shareEl || !snapshotEl || !colorsEl) {
+    if (!speedEl || !toggleEl || !stepEl || !resetEl || !antListEl || !antCountEl || !simStatusEl || !spawnFormEl || !spawnErrorEl || !toggleSpawnEl || !shareEl || !snapshotEl || !fullscreenEl || !colorsEl || !sharePanelEl || !shareUrlEl || !copyShareEl || !loadPresetEl || !loadPresetBtnEl || !presetListEl || !helpBtnEl || !helpModalEl || !helpCloseEl || !helpDontShowEl || !sharePanelBtnEl) {
         return;
     }
 
@@ -462,20 +479,92 @@ function setupHud() {
         spawnFormEl.classList.toggle('is-open');
     });
 
+    function syncFullscreenUi() {
+        fullscreenEl.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+    }
+
+    fullscreenEl.addEventListener('click', async () => {
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+            } else {
+                await document.documentElement.requestFullscreen();
+            }
+        } catch (err) {
+            console.warn('Fullscreen toggle failed', err);
+        } finally {
+            syncFullscreenUi();
+        }
+    });
+
     shareEl.addEventListener('click', async () => {
         var url = buildShareUrl();
-        try {
-            await navigator.clipboard.writeText(url);
+        var didEnter = await maybeEnterFullscreenForShare();
+        var ok = await copyTextToClipboard(url);
+        if (ok) {
             shareEl.textContent = 'Copied';
             setTimeout(() => { shareEl.textContent = 'Share'; }, 900);
+            shareUrlEl.value = url;
+        } else {
+            console.warn('Share URL copy failed:', url);
+            shareEl.textContent = 'Copy failed';
+            setTimeout(() => { shareEl.textContent = 'Share'; }, 1200);
+        }
+        await maybeExitFullscreenAfterShare(didEnter);
+    });
+
+    function toggleSharePanel(forceOpen) {
+        var shouldOpen = (typeof forceOpen === 'boolean') ? forceOpen : !sharePanelEl.classList.contains('is-open');
+        if (shouldOpen) {
+            sharePanelEl.classList.add('is-open');
+            sharePanelEl.setAttribute('aria-hidden', 'false');
+            shareUrlEl.value = buildShareUrl();
+        } else {
+            sharePanelEl.classList.remove('is-open');
+            sharePanelEl.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    sharePanelBtnEl.addEventListener('click', () => toggleSharePanel());
+
+    copyShareEl.addEventListener('click', async () => {
+        var url = buildShareUrl();
+        var ok = await copyTextToClipboard(url);
+        if (ok) {
+            copyShareEl.textContent = 'Copied';
+            setTimeout(() => { copyShareEl.textContent = 'Copy'; }, 900);
+            shareUrlEl.value = url;
+        } else {
+            copyShareEl.textContent = 'Copy failed';
+            setTimeout(() => { copyShareEl.textContent = 'Copy'; }, 1200);
+        }
+    });
+
+    loadPresetBtnEl.addEventListener('click', () => {
+        var raw = (loadPresetEl.value || '').trim();
+        if (!raw) return;
+        try {
+            applyPresetFromInput(raw);
+            loadPresetEl.value = '';
+            toggleSharePanel(true);
+            shareUrlEl.value = buildShareUrl();
         } catch (err) {
-            window.prompt('Copy this URL', url);
+            console.warn('Preset load failed', err);
+        }
+    });
+
+    loadPresetEl.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            loadPresetBtnEl.click();
         }
     });
 
     snapshotEl.addEventListener('click', async () => {
         var shareUrl = buildShareUrl();
         try {
+            var didEnter = await maybeEnterFullscreenForShare();
+            await delay(90);
             var file = await captureSceneSnapshotFile('langton3d.png');
             if (navigator.share && file) {
                 await navigator.share({
@@ -484,21 +573,23 @@ function setupHud() {
                     url: shareUrl,
                     files: [file]
                 });
+                await maybeExitFullscreenAfterShare(didEnter);
                 return;
             }
             if (file) {
                 downloadFile(file, 'langton3d.png');
-                try {
-                    await navigator.clipboard.writeText(shareUrl);
-                } catch (e) {}
+                await copyTextToClipboard(shareUrl);
                 snapshotEl.textContent = 'Downloaded';
                 setTimeout(() => { snapshotEl.textContent = 'Snapshot'; }, 900);
+                await maybeExitFullscreenAfterShare(didEnter);
                 return;
             }
-            window.prompt('Copy this URL', shareUrl);
+            await maybeExitFullscreenAfterShare(didEnter);
+            console.warn('Snapshot capture failed; preset URL:', shareUrl);
         } catch (err) {
             console.warn('Snapshot failed', err);
-            window.prompt('Copy this URL', shareUrl);
+            await maybeExitFullscreenAfterShare(false);
+            console.warn('Preset URL:', shareUrl);
         }
     });
 
@@ -576,7 +667,48 @@ function setupHud() {
         } else if (event.key === 'r' || event.key === 'R') {
             resetSimulation();
             renderHud(true);
+        } else if (event.key === 'h' || event.key === 'H' || event.key === '?') {
+            openHelpModal();
         }
+    });
+
+    function openHelpModal() {
+        helpModalEl.classList.add('is-open');
+        helpModalEl.setAttribute('aria-hidden', 'false');
+        helpDontShowEl.checked = (localStorage.getItem('langton3d_help_dont_show') === '1');
+    }
+
+    function closeHelpModal() {
+        helpModalEl.classList.remove('is-open');
+        helpModalEl.setAttribute('aria-hidden', 'true');
+        if (helpDontShowEl.checked) localStorage.setItem('langton3d_help_dont_show', '1');
+        else localStorage.removeItem('langton3d_help_dont_show');
+    }
+
+    helpBtnEl.addEventListener('click', () => openHelpModal());
+    helpCloseEl.addEventListener('click', () => closeHelpModal());
+    helpModalEl.addEventListener('click', (event) => {
+        if (event.target === helpModalEl) closeHelpModal();
+    });
+
+    // First-run: show help unless user opted out
+    if (localStorage.getItem('langton3d_help_dont_show') !== '1') {
+        setTimeout(() => openHelpModal(), 250);
+    }
+
+    ui.presets = buildCuratedPresets();
+    presetListEl.innerHTML = ui.presets.map((p, idx) => (
+        `<button class="presetBtn" type="button" data-preset-idx="${idx}" title="${escapeHtml(p.description || '')}">${escapeHtml(p.name)}</button>`
+    )).join('');
+    presetListEl.addEventListener('click', (event) => {
+        var target = event.target;
+        var idx = Number(target?.getAttribute?.('data-preset-idx'));
+        if (!Number.isFinite(idx)) return;
+        var preset = ui.presets[idx];
+        if (!preset) return;
+        applyPresetObject(preset.preset);
+        shareUrlEl.value = buildShareUrl();
+        toggleSharePanel(true);
     });
 
     function renderHud(force) {
@@ -586,6 +718,8 @@ function setupHud() {
     }
 
     syncSpeedUi();
+    syncFullscreenUi();
+    shareUrlEl.value = buildShareUrl();
     renderHud(true);
 }
 
@@ -738,6 +872,72 @@ function resetSimulation() {
     allTermites.forEach((ant) => ant.reset());
 }
 
+function applyPresetFromInput(input) {
+    var raw = String(input).trim();
+    var encoded = raw;
+
+    // Full URL?
+    if (/^https?:\/\//i.test(raw)) {
+        var url = new URL(raw);
+        encoded = url.searchParams.get('p') || '';
+    } else {
+        // raw might be '?p=...' or 'p=...'
+        encoded = raw.replace(/^[?#]/, '');
+        if (encoded.startsWith('p=')) encoded = encoded.slice(2);
+        else if (encoded.includes('p=')) {
+            var params = new URLSearchParams(encoded);
+            encoded = params.get('p') || '';
+        }
+    }
+
+    if (!encoded) throw new Error('No preset found in input');
+    var json = base64UrlDecode(encoded);
+    var preset = JSON.parse(json);
+    applyPresetObject(preset);
+}
+
+function applyPresetObject(preset) {
+    if (!preset || (preset.version !== 1 && preset.version !== 2)) throw new Error('Unsupported preset');
+
+    document.querySelectorAll('[id^="kLang-3d-"]').forEach((node) => node.remove());
+
+    var gridCfg = preset.grid || {};
+    antGrid.init(Number(gridCfg.x || 100), Number(gridCfg.y || 100), Number(gridCfg.z || 100));
+
+    sim.spawnQueue = [];
+    sim.totalTicks = 0;
+    sim.pendingSingleSteps = 0;
+
+    var simCfg = preset.sim || {};
+    if (typeof simCfg.running === 'boolean') sim.running = simCfg.running;
+    if (Number.isFinite(Number(simCfg.stepsPerFrame))) sim.stepsPerFrame = Math.max(1, Math.min(30, Number(simCfg.stepsPerFrame)));
+
+    allTermites = [];
+    nextAntId = 1;
+
+    var ants = Array.isArray(preset.ants) ? preset.ants : [];
+    ants.forEach((a) => {
+        var colors = a.colors;
+        if ((!Array.isArray(colors) || colors.length === 0) && Number.isFinite(Number(a.baseHue))) {
+            colors = generatePaletteFromHue(Number(a.baseHue), parseRuleString(a.rule || '').length || 2);
+        }
+        spawnAnt({
+            name: a.name || '',
+            x: a.x,
+            y: a.y,
+            z: a.z,
+            orientation: a.orientation,
+            rule: a.rule,
+            colors: Array.isArray(colors) ? colors.join(' ') : '',
+            spawnAtTick: a.spawnAtTick || 0
+        });
+    });
+
+    // Update URL (share-ready) without reloading
+    var url = buildShareUrl();
+    try { history.replaceState({}, '', url); } catch (err) {}
+}
+
 function parseRuleString(text) {
     return String(text)
         .replace(/,/g, ' ')
@@ -882,7 +1082,12 @@ function loadPresetFromUrl() {
 }
 
 function buildShareUrl() {
-    var base = window.location.href.split('?')[0].split('#')[0];
+    var baseUrl = new URL(window.location.href);
+    baseUrl.search = '';
+    baseUrl.hash = '';
+    if (!baseUrl.pathname.endsWith('/langton3d/kaaro.html')) {
+        baseUrl.pathname = '/langton3d/kaaro.html';
+    }
     var preset = {
         version: 2,
         grid: {
@@ -916,7 +1121,8 @@ function buildShareUrl() {
     };
 
     var encoded = base64UrlEncode(JSON.stringify(preset));
-    return `${base}?p=${encoded}`;
+    baseUrl.searchParams.set('p', encoded);
+    return baseUrl.toString();
 }
 
 function base64UrlEncode(text) {
@@ -930,9 +1136,52 @@ function base64UrlDecode(text) {
     return decodeURIComponent(escape(atob(padded)));
 }
 
+async function copyTextToClipboard(text) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch (err) {}
+
+    try {
+        var ta = document.createElement('textarea');
+        ta.value = String(text);
+        ta.setAttribute('readonly', 'readonly');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        var ok = document.execCommand('copy');
+        ta.remove();
+        return !!ok;
+    } catch (err) {
+        return false;
+    }
+}
+
 async function captureSceneSnapshotFile(filename) {
     var sceneEl = document.getElementById('mainFrame');
-    if (!sceneEl || !sceneEl.renderer || !sceneEl.renderer.domElement) return null;
+    if (!sceneEl) return null;
+
+    if (!sceneEl.hasLoaded) {
+        await new Promise((resolve) => sceneEl.addEventListener('loaded', resolve, { once: true }));
+    }
+
+    // Ensure at least one render has happened before reading WebGL pixels.
+    if (!sceneEl.renderer || !sceneEl.renderer.domElement) {
+        await delay(60);
+    }
+    if (!sceneEl.renderer || !sceneEl.renderer.domElement) return null;
+
+    try {
+        if (sceneEl.camera && sceneEl.object3D) {
+            sceneEl.renderer.render(sceneEl.object3D, sceneEl.camera);
+        }
+    } catch (err) {}
+
     var canvas = sceneEl.renderer.domElement;
 
     var blob = await new Promise((resolve) => {
@@ -942,7 +1191,15 @@ async function captureSceneSnapshotFile(filename) {
             resolve(null);
         }
     });
-    if (!blob) return null;
+    if (!blob) {
+        try {
+            var dataUrl = canvas.toDataURL('image/png');
+            var res = await fetch(dataUrl);
+            blob = await res.blob();
+        } catch (err) {
+            return null;
+        }
+    }
 
     try {
         return new File([blob], filename, { type: 'image/png' });
@@ -962,6 +1219,117 @@ function downloadFile(fileOrBlob, filename) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+async function maybeEnterFullscreenForShare() {
+    try {
+        if (document.fullscreenElement) return false;
+        await document.documentElement.requestFullscreen();
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
+async function maybeExitFullscreenAfterShare(didEnter) {
+    try {
+        if (!didEnter) return;
+        if (!document.fullscreenElement) return;
+        await document.exitFullscreen();
+    } catch (err) {}
+}
+
+function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function buildCuratedPresets() {
+    // Note: these are classic/common turmite-style rule tables (L/R only) adapted to this sim.
+    return [
+        {
+            name: 'Classic (LR)',
+            description: 'The original Langton’s Ant: 2-state LR.',
+            preset: {
+                version: 2,
+                grid: { x: 100, y: 100, z: 100 },
+                sim: { running: true, stepsPerFrame: 2 },
+                ants: [
+                    {
+                        name: 'Classic',
+                        x: 0, y: 0, z: 0,
+                        orientation: 5,
+                        rule: 'L R',
+                        colors: ['#12130f', '#eae6e5'],
+                        spawnAtTick: 0
+                    }
+                ]
+            }
+        },
+        {
+            name: '4-state (LRRL)',
+            description: 'A 4-state rule that tends to form structured patterns.',
+            preset: {
+                version: 2,
+                grid: { x: 100, y: 100, z: 100 },
+                sim: { running: true, stepsPerFrame: 3 },
+                ants: [
+                    {
+                        name: 'LRRL',
+                        x: 0, y: 0, z: 0,
+                        orientation: 5,
+                        rule: 'L R R L',
+                        colors: ['#12130f', '#5b9279', '#eae6e5', '#8fcb9b'],
+                        spawnAtTick: 0
+                    }
+                ]
+            }
+        },
+        {
+            name: '4-state (LLRR)',
+            description: 'Another 4-state that often produces broad swirls.',
+            preset: {
+                version: 2,
+                grid: { x: 100, y: 100, z: 100 },
+                sim: { running: true, stepsPerFrame: 3 },
+                ants: [
+                    {
+                        name: 'LLRR',
+                        x: 0, y: 0, z: 0,
+                        orientation: 5,
+                        rule: 'L L R R',
+                        colors: ['#0b0f14', '#3a506b', '#5bc0be', '#f0b429'],
+                        spawnAtTick: 0
+                    }
+                ]
+            }
+        },
+        {
+            name: 'Two Ants (mirror)',
+            description: 'Two classic ants starting opposite; good for interaction.',
+            preset: {
+                version: 2,
+                grid: { x: 100, y: 100, z: 100 },
+                sim: { running: true, stepsPerFrame: 2 },
+                ants: [
+                    { name: 'A', x: -10, y: 0, z: 0, orientation: 5, rule: 'L R', colors: ['#0a0c10', '#8fcb9b'], spawnAtTick: 0 },
+                    { name: 'B', x: 10, y: 0, z: 0, orientation: 5, rule: 'R L', colors: ['#0a0c10', '#eae6e5'], spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            name: 'Scheduled Spawn',
+            description: 'Second ant joins later (spawn tick).',
+            preset: {
+                version: 2,
+                grid: { x: 110, y: 110, z: 110 },
+                sim: { running: true, stepsPerFrame: 3 },
+                ants: [
+                    { name: 'Starter', x: 0, y: 0, z: 0, orientation: 5, rule: 'L R', colors: ['#0a0c10', '#5b9279'], spawnAtTick: 0 },
+                    { name: 'Joiner', x: 0, y: 0, z: 25, orientation: 1, rule: 'L R R L', colors: ['#0a0c10', '#486084', '#8c916f', '#324683'], spawnAtTick: 1500 }
+                ]
+            }
+        }
+    ];
 }
 
 loadPresetFromUrl();
