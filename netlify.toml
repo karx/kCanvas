@@ -1,0 +1,13 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/"
+  to = "/langton3d/kaaro.html"
+  status = 302
+
+[[redirects]]
+  from = "/langton3d"
+  to = "/langton3d/kaaro.html"
+  status = 302
+

@@ -10,6 +10,7 @@ var sim = {
     stepsPerFrame: 1,
     pendingSingleSteps: 0,
     totalTicks: 0,
+    spawnQueue: [],
     ui: {
         lastRenderAt: 0,
         renderEveryMs: 150
@@ -46,7 +47,7 @@ class LangtonAntGrid {
                 grid[i][j] = [];
                 for (let k=-z;k<z;k++) {
                     grid[i][j][k] = Object.assign({}, {
-                        color: 0
+                        color: null
                     });
                 }
             }
@@ -60,8 +61,8 @@ class LangtonAntGrid {
         
     }
 
-    colorUpdate(x,y,z,colorIndex) {
-        grid[x][y][z].color = colorIndex;
+    colorUpdate(x,y,z,colorHex) {
+        grid[x][y][z].color = colorHex;
     }
 
     getColorOfGrid(x,y,z) {
@@ -84,6 +85,10 @@ class LangtonTermite {
         this.steps = 0;
         this.isOutOfBounds = false;
         this.lastError = '';
+        this.baseHue = 210;
+        this.stateColors = generatePaletteFromHue(this.baseHue, numberOfStates);
+        this.spawnAtTick = 0;
+        this.bornAtTick = 0;
         this.numberOfStates = numberOfStates;
         this.stateTransitions = transition;
         this.recentSteps = [];
@@ -92,7 +97,8 @@ class LangtonTermite {
             x: start_x,
             y: start_y,
             z: start_z,
-            color: 0,
+            color: null,
+            stateIndex: 0,
             heading: 0,
             orientation: orientation
         });
@@ -100,7 +106,8 @@ class LangtonTermite {
             x: start_x,
             y: start_y,
             z: start_z,
-            color: 0,
+            color: null,
+            stateIndex: 0,
             heading: 0,
             orientation: orientation
         });
@@ -130,16 +137,21 @@ class LangtonTermite {
             return;
         }
 
-        // If we Want it to interact with the community (no race):
-        var colorFromGrid = antGrid.getColorOfGrid(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
-        var transitionToken = this.stateTransitions[currentStatus.color] || '?';
-        this.currentPosition.color = (colorFromGrid + 1)%(this.numberOfStates);
+        // Interact via color: map grid color to this ant's state index; unknown colors are treated as state 0.
+        var cellColor = antGrid.getColorOfGrid(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
+        var currentStateIndex = this._getStateIndexForColor(cellColor);
+        this.currentPosition.stateIndex = currentStateIndex;
+        var transitionToken = this.stateTransitions[currentStateIndex] || '?';
+        var nextStateIndex = (currentStateIndex + 1)%(this.numberOfStates);
+        var nextColor = this.stateColors[nextStateIndex] || this.stateColors[0] || colorsToBeUsed[0];
+        this.currentPosition.color = nextColor;
         //Elese if we want it not interacting with the community (or sometimes ;P - a bug Yes)
         // this.currentPosition.color = (this.currentPosition.color + 1)%(this.numberOfStates);
 
 
         
-        antGrid.colorUpdate(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z, this.currentPosition.color);
+        antGrid.colorUpdate(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z, nextColor);
+        setOwnerForCell(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z, this.id);
 
         drawBox(this.currentPosition);
         
@@ -149,13 +161,13 @@ class LangtonTermite {
         // getNextHeadingFromColorAndHeading(this.currentStatus)
 
 
-        if(this.stateTransitions[currentStatus.color] === 'L') {
+        if(this.stateTransitions[currentStateIndex] === 'L') {
             this.currentPosition.heading = (this.currentPosition.heading + 1)%4;
             // console.log('right');
-        } else if (this.stateTransitions[currentStatus.color] === 'R') {
+        } else if (this.stateTransitions[currentStateIndex] === 'R') {
             this.currentPosition.heading = (this.currentPosition.heading + 3)%4;
             // console.log('left');
-        } else if (this.stateTransitions[currentStatus.color] === 'U') {
+        } else if (this.stateTransitions[currentStateIndex] === 'U') {
             // TODO: make this shiz 3d
             //  Would need to add orientation. i.e direction of tangent.
             // console.log("lol");
@@ -191,8 +203,8 @@ class LangtonTermite {
             this.lastError = 'Out of bounds';
             this._pushRecentStep({
                 token: transitionToken,
-                fromState: currentStatus.color,
-                toState: this.currentPosition.color,
+                fromState: currentStateIndex,
+                toState: nextStateIndex,
                 delta: delta,
                 heading: this.currentPosition.heading
             });
@@ -200,7 +212,9 @@ class LangtonTermite {
         }
         // this.currentPosition.color = "#E3E3E3";
         drawBox(this.currentPosition);
-        this.currentPosition.color = grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color;
+        var nextCellColor = grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color;
+        this.currentPosition.stateIndex = this._getStateIndexForColor(nextCellColor);
+        this.currentPosition.color = nextCellColor;
         // console.log("New color : " + this.currentPosition.color);
 
         this.steps += 1;
@@ -208,8 +222,8 @@ class LangtonTermite {
         this.lastError = '';
         this._pushRecentStep({
             token: transitionToken,
-            fromState: currentStatus.color,
-            toState: colorFromGrid,
+            fromState: currentStateIndex,
+            toState: nextStateIndex,
             delta: delta,
             heading: this.currentPosition.heading
         });
@@ -247,6 +261,12 @@ class LangtonTermite {
         this.recentSteps.unshift(step);
         if (this.recentSteps.length > this.maxRecentSteps) this.recentSteps.length = this.maxRecentSteps;
     }
+
+    _getStateIndexForColor(colorHex) {
+        if (!colorHex) return 0;
+        var idx = this.stateColors.findIndex(c => (String(c).toLowerCase() === String(colorHex).toLowerCase()));
+        return idx >= 0 ? idx : 0;
+    }
     
 }
 
@@ -281,6 +301,8 @@ function draw() {
 
     antGrid.updateGrid();
 
+    flushSpawnQueue();
+
     var shouldStep = sim.running || sim.pendingSingleSteps > 0;
     if (shouldStep) {
         var stepsThisFrame = sim.running ? sim.stepsPerFrame : 1;
@@ -288,6 +310,7 @@ function draw() {
             if (!sim.running && sim.pendingSingleSteps <= 0) break;
             allTermites.forEach((termite) => termite.colorAndupdatePosition());
             sim.totalTicks += 1;
+            flushSpawnQueue();
             if (!sim.running) sim.pendingSingleSteps -= 1;
         }
     }
@@ -297,11 +320,10 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
-draw();
-
 function drawBox(position) {
     if (!grid[position.x] || !grid[position.x][position.y] || !grid[position.x][position.y][position.z])
         return;
+    var cellColor = grid[position.x][position.y][position.z].color || colorsToBeUsed[0];
     if (grid[position.x][position.y][position.z].ent)
     {
         var oldBox = grid[position.x][position.y][position.z].ent;
@@ -310,7 +332,7 @@ function drawBox(position) {
 
         // document.getElementById(`kLang-3d-${position.x}-${position.y}-${position.z}`);
         
-        oldBox.setAttribute('color', getColorFromColorIndex(position.color));
+        oldBox.setAttribute('color', cellColor);
 
         oldBox.setAttribute('scale', `${1-scale} ${1-scale} ${1-scale}`);
     }
@@ -319,7 +341,7 @@ function drawBox(position) {
         var scale = 0.85;
         newBox.setAttribute('position', `${position.x} ${position.y} ${position.z}`);
         newBox.setAttribute('scale', `${1-scale} ${1-scale} ${1-scale}`);
-        newBox.setAttribute('color', getColorFromColorIndex(position.color));
+        newBox.setAttribute('color', cellColor);
         newBox.setAttribute('id',`kLang-3d-${position.x}-${position.y}-${position.z}`);
         grid[position.x][position.y][position.z].scale = scale;
         grid[position.x][position.y][position.z].ent = newBox;
@@ -341,6 +363,55 @@ function getColorFromColorIndex(colorIndex) {
     return `hsl(${hue}deg 55% 60%)`;
 }
 
+function getAntColorForState(ant, stateIndex) {
+    var palette = ant?.stateColors;
+    if (Array.isArray(palette) && palette[stateIndex]) return palette[stateIndex];
+    return getColorFromColorIndex(stateIndex);
+}
+
+function setOwnerForCell(x, y, z, antId) {
+    if (!grid?.[x]?.[y]?.[z]) return;
+    grid[x][y][z].ownerId = antId;
+}
+
+function generatePaletteFromHue(baseHue, count) {
+    var c = Number(count);
+    if (!Number.isFinite(c) || c < 2) c = 2;
+    var hue = Number(baseHue);
+    if (!Number.isFinite(hue)) hue = 210;
+    hue = ((hue % 360) + 360) % 360;
+    var palette = [];
+    for (let i = 0; i < c; i++) {
+        var h = (hue + i * 40) % 360;
+        palette.push(hslToHex(h, 62, 60));
+    }
+    return palette;
+}
+
+function hslToHex(h, s, l) {
+    var _s = s / 100;
+    var _l = l / 100;
+    var c = (1 - Math.abs(2 * _l - 1)) * _s;
+    var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    var m = _l - c / 2;
+    var r = 0, g = 0, b = 0;
+    if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+    else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+    else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+    else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+    else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+    var rr = Math.round((r + m) * 255);
+    var gg = Math.round((g + m) * 255);
+    var bb = Math.round((b + m) * 255);
+    return `#${toHex2(rr)}${toHex2(gg)}${toHex2(bb)}`;
+}
+
+function toHex2(n) {
+    var v = Math.max(0, Math.min(255, Number(n) || 0));
+    return v.toString(16).padStart(2, '0');
+}
+
 function setupHud() {
     var speedEl = document.getElementById('speed');
     var speedValueEl = document.getElementById('speedValue');
@@ -353,8 +424,11 @@ function setupHud() {
     var spawnFormEl = document.getElementById('spawnForm');
     var spawnErrorEl = document.getElementById('spawnError');
     var toggleSpawnEl = document.getElementById('btn-toggle-spawn');
+    var shareEl = document.getElementById('btn-share');
+    var snapshotEl = document.getElementById('btn-snapshot');
+    var colorsEl = document.getElementById('spawnColors');
 
-    if (!speedEl || !toggleEl || !stepEl || !resetEl || !antListEl || !antCountEl || !simStatusEl || !spawnFormEl || !spawnErrorEl || !toggleSpawnEl) {
+    if (!speedEl || !toggleEl || !stepEl || !resetEl || !antListEl || !antCountEl || !simStatusEl || !spawnFormEl || !spawnErrorEl || !toggleSpawnEl || !shareEl || !snapshotEl || !colorsEl) {
         return;
     }
 
@@ -388,6 +462,46 @@ function setupHud() {
         spawnFormEl.classList.toggle('is-open');
     });
 
+    shareEl.addEventListener('click', async () => {
+        var url = buildShareUrl();
+        try {
+            await navigator.clipboard.writeText(url);
+            shareEl.textContent = 'Copied';
+            setTimeout(() => { shareEl.textContent = 'Share'; }, 900);
+        } catch (err) {
+            window.prompt('Copy this URL', url);
+        }
+    });
+
+    snapshotEl.addEventListener('click', async () => {
+        var shareUrl = buildShareUrl();
+        try {
+            var file = await captureSceneSnapshotFile('langton3d.png');
+            if (navigator.share && file) {
+                await navigator.share({
+                    title: 'Langton 3D',
+                    text: 'Langton 3D snapshot + preset',
+                    url: shareUrl,
+                    files: [file]
+                });
+                return;
+            }
+            if (file) {
+                downloadFile(file, 'langton3d.png');
+                try {
+                    await navigator.clipboard.writeText(shareUrl);
+                } catch (e) {}
+                snapshotEl.textContent = 'Downloaded';
+                setTimeout(() => { snapshotEl.textContent = 'Snapshot'; }, 900);
+                return;
+            }
+            window.prompt('Copy this URL', shareUrl);
+        } catch (err) {
+            console.warn('Snapshot failed', err);
+            window.prompt('Copy this URL', shareUrl);
+        }
+    });
+
     spawnFormEl.addEventListener('submit', (event) => {
         event.preventDefault();
         spawnErrorEl.textContent = '';
@@ -397,7 +511,9 @@ function setupHud() {
         var y = Number(document.getElementById('spawnY')?.value || 0);
         var z = Number(document.getElementById('spawnZ')?.value || 0);
         var orientation = Number(document.getElementById('spawnOrientation')?.value || 5);
+        var atTick = Number(document.getElementById('spawnAtTick')?.value || 0);
         var ruleStr = (document.getElementById('spawnRule')?.value || '').trim();
+        var colorsStr = (document.getElementById('spawnColors')?.value || '').trim();
 
         try {
             spawnAnt({
@@ -406,11 +522,15 @@ function setupHud() {
                 y: y,
                 z: z,
                 orientation: orientation,
-                rule: ruleStr
+                rule: ruleStr,
+                colors: colorsStr,
+                spawnAtTick: atTick
             });
             spawnFormEl.reset();
             var ruleEl = document.getElementById('spawnRule');
             if (ruleEl) ruleEl.value = 'L R R L';
+            var colorsResetEl = document.getElementById('spawnColors');
+            if (colorsResetEl) colorsResetEl.value = '#12130f #5b9279 #eae6e5 #8fcb9b';
             spawnFormEl.classList.remove('is-open');
             renderHud(true);
         } catch (err) {
@@ -486,7 +606,7 @@ function maybeRenderHud(nowOverride) {
     speedValueEl.textContent = `${sim.stepsPerFrame}`;
 
     var liveCount = allTermites.filter(a => a.active).length;
-    simStatusEl.textContent = `${sim.running ? 'Running' : 'Paused'} • ${liveCount}/${allTermites.length} live • ticks ${sim.totalTicks} • boxes ${sim.stats.boxesCreated}`;
+    simStatusEl.textContent = `${sim.running ? 'Running' : 'Paused'} • ${liveCount}/${allTermites.length} live • queued ${sim.spawnQueue.length} • ticks ${sim.totalTicks} • boxes ${sim.stats.boxesCreated}`;
 
     antListEl.innerHTML = allTermites.map((ant) => {
         var pos = ant.currentPosition;
@@ -496,12 +616,12 @@ function maybeRenderHud(nowOverride) {
         var status = ant.isOutOfBounds ? `stopped (${ant.lastError})` : (ant.active ? 'live' : 'paused');
         var recent = ant.recentSteps.slice(0, 6).reverse();
         var recentHtml = recent.map((s) => {
-            var c = getColorFromColorIndex(s.fromState || 0);
+            var c = getAntColorForState(ant, s.fromState || 0);
             var vec = formatDelta(s.delta);
             return `<span class="antToken" style="border-color: rgba(255,255,255,0.10); background: rgba(255,255,255,0.06); color:${c}" title="${s.token} ${vec}">${escapeHtml(s.token)}</span>`;
         }).join('');
         var ruleHtml = ant.stateTransitions.map((t, i) => {
-            var c = getColorFromColorIndex(i);
+            var c = getAntColorForState(ant, i);
             return `<span class="antToken" style="color:${c}" title="state ${i}">${escapeHtml(t)}</span>`;
         }).join('');
 
@@ -522,6 +642,8 @@ function maybeRenderHud(nowOverride) {
                 <div>Move: ${formatDelta(move)} ${lastToken ? `• ${escapeHtml(lastToken)}` : ''}</div>
                 <div>Heading: ${escapeHtml(heading)}</div>
                 <div>States: ${ant.numberOfStates}</div>
+                <div>Palette: ${Array.isArray(ant.stateColors) ? ant.stateColors.length : 0}</div>
+                <div>Born: ${Number.isFinite(Number(ant.bornAtTick)) ? Number(ant.bornAtTick) : 0}</div>
             </div>
             <div class="antCard__rule" title="Recent steps">${recentHtml || '<span style=\"opacity:0.7\">No steps yet</span>'}</div>
             <div class="antCard__rule" title="Rule table">${ruleHtml}</div>
@@ -536,6 +658,8 @@ function spawnAnt(config) {
     var z = Number(config.z);
     var orientation = Number(config.orientation);
     var rule = (config.rule || '').trim();
+    var colorsStr = (config.colors || '').trim();
+    var spawnAtTick = Number(config.spawnAtTick);
 
     if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) throw new Error('Start position must be numbers');
     if (!Number.isFinite(orientation)) orientation = 5;
@@ -547,17 +671,67 @@ function spawnAnt(config) {
         if (!['L', 'R', 'U'].includes(t)) throw new Error(`Unsupported token "${t}" (allowed: L, R, U)`);
     });
 
-    var ant = new LangtonTermite(x, y, z, orientation, transitions, transitions.length);
-    if (name) ant.name = name;
+    if (!Number.isFinite(spawnAtTick) || spawnAtTick < 0) spawnAtTick = 0;
+
+    var palette = parseColorsString(colorsStr);
+    if (palette.length === 0) {
+        palette = generatePaletteFromHue(210, transitions.length);
+    }
+    if (palette.length !== transitions.length) {
+        throw new Error(`Colors count (${palette.length}) must match rule length (${transitions.length})`);
+    }
+
+    var antConfig = {
+        name: name,
+        x: x,
+        y: y,
+        z: z,
+        orientation: orientation,
+        transitions: transitions,
+        stateColors: palette,
+        spawnAtTick: spawnAtTick
+    };
+
+    if (spawnAtTick > sim.totalTicks) {
+        sim.spawnQueue.push({ atTick: spawnAtTick, config: antConfig });
+        sim.spawnQueue.sort((a, b) => a.atTick - b.atTick);
+        return null;
+    }
+
+    return spawnAntNow(antConfig);
+}
+
+function spawnAntNow(antConfig) {
+    var ant = new LangtonTermite(
+        antConfig.x,
+        antConfig.y,
+        antConfig.z,
+        antConfig.orientation,
+        antConfig.transitions,
+        antConfig.transitions.length
+    );
+    if (antConfig.name) ant.name = antConfig.name;
+    ant.stateColors = antConfig.stateColors;
+    ant.spawnAtTick = antConfig.spawnAtTick;
+    ant.bornAtTick = sim.totalTicks;
 
     allTermites.push(ant);
     return ant;
+}
+
+function flushSpawnQueue() {
+    if (!sim.spawnQueue.length) return;
+    while (sim.spawnQueue.length && sim.spawnQueue[0].atTick <= sim.totalTicks) {
+        var item = sim.spawnQueue.shift();
+        spawnAntNow(item.config);
+    }
 }
 
 function resetSimulation() {
     sim.pendingSingleSteps = 0;
     sim.totalTicks = 0;
     sim.stats.boxesCreated = 0;
+    sim.spawnQueue = [];
 
     document.querySelectorAll('[id^="kLang-3d-"]').forEach((node) => node.remove());
     antGrid.init(100, 100, 100);
@@ -570,6 +744,29 @@ function parseRuleString(text) {
         .split(/\s+/g)
         .map((t) => t.trim().toUpperCase())
         .filter(Boolean);
+}
+
+function parseColorsString(text) {
+    var tokens = String(text)
+        .replace(/,/g, ' ')
+        .split(/\s+/g)
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+    var colors = tokens.map((t) => normalizeHexColor(t)).filter(Boolean);
+    return colors;
+}
+
+function normalizeHexColor(token) {
+    var t = String(token).trim();
+    if (!t) return null;
+    if (t[0] !== '#') t = `#${t}`;
+    if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(t)) return null;
+    if (t.length === 4) {
+        var r = t[1], g = t[2], b = t[3];
+        t = `#${r}${r}${g}${g}${b}${b}`;
+    }
+    return t.toLowerCase();
 }
 
 function formatDelta(delta) {
@@ -609,4 +806,164 @@ function escapeHtml(input) {
         .replace(/'/g, '&#39;');
 }
 
+function loadPresetFromUrl() {
+    try {
+        console.groupCollapsed('[langton3d] Preset: load from URL');
+        var params = new URLSearchParams(window.location.search || '');
+        var encoded = params.get('p');
+        if (!encoded) {
+            console.log('No `p` query param found.');
+            console.groupEnd();
+            return false;
+        }
+
+        console.log('Encoded preset length:', encoded.length);
+        var json = base64UrlDecode(encoded);
+        console.log('Decoded JSON length:', json.length);
+        var preset = JSON.parse(json);
+        console.log('Preset payload:', preset);
+        if (!preset || (preset.version !== 1 && preset.version !== 2)) {
+            console.warn('Unsupported preset version:', preset?.version);
+            console.groupEnd();
+            return false;
+        }
+
+        var gridCfg = preset.grid || {};
+        var gx = Number(gridCfg.x || 100);
+        var gy = Number(gridCfg.y || 100);
+        var gz = Number(gridCfg.z || 100);
+        antGrid.init(gx, gy, gz);
+        console.log('Grid init:', { x: gx, y: gy, z: gz });
+
+        var simCfg = preset.sim || {};
+        if (typeof simCfg.running === 'boolean') sim.running = simCfg.running;
+        if (Number.isFinite(Number(simCfg.stepsPerFrame))) sim.stepsPerFrame = Math.max(1, Math.min(30, Number(simCfg.stepsPerFrame)));
+        console.log('Sim config:', { running: sim.running, stepsPerFrame: sim.stepsPerFrame });
+
+        allTermites = [];
+        nextAntId = 1;
+        sim.spawnQueue = [];
+        sim.totalTicks = 0;
+        sim.pendingSingleSteps = 0;
+
+        var ants = Array.isArray(preset.ants) ? preset.ants : [];
+        console.log('Ants in preset:', ants.length);
+        ants.forEach((a, idx) => {
+            var colors = a.colors;
+            if ((!Array.isArray(colors) || colors.length === 0) && Number.isFinite(Number(a.baseHue))) {
+                colors = generatePaletteFromHue(Number(a.baseHue), parseRuleString(a.rule || '').length || 2);
+            }
+
+            try {
+                spawnAnt({
+                    name: a.name || '',
+                    x: a.x,
+                    y: a.y,
+                    z: a.z,
+                    orientation: a.orientation,
+                    rule: a.rule,
+                    colors: Array.isArray(colors) ? colors.join(' ') : '',
+                    spawnAtTick: a.spawnAtTick || 0
+                });
+            } catch (err) {
+                console.warn(`Failed to add ant[${idx}] from preset`, a, err);
+            }
+        });
+
+        console.log('Loaded ants:', allTermites.length, 'queued:', sim.spawnQueue.length);
+        console.groupEnd();
+
+        return true;
+    } catch (err) {
+        console.warn('Failed to load preset from URL', err);
+        try { console.groupEnd(); } catch (e) {}
+        return false;
+    }
+}
+
+function buildShareUrl() {
+    var base = window.location.href.split('?')[0].split('#')[0];
+    var preset = {
+        version: 2,
+        grid: {
+            x: antGrid?.max_x || 100,
+            y: antGrid?.max_y || 100,
+            z: antGrid?.max_z || 100
+        },
+        sim: {
+            running: sim.running,
+            stepsPerFrame: sim.stepsPerFrame
+        },
+        ants: allTermites.map((ant) => ({
+            name: ant.name,
+            x: ant.startPosition.x,
+            y: ant.startPosition.y,
+            z: ant.startPosition.z,
+            orientation: ant.startPosition.orientation,
+            rule: (ant.stateTransitions || []).join(' '),
+            colors: Array.isArray(ant.stateColors) ? ant.stateColors : [],
+            spawnAtTick: Number.isFinite(Number(ant.spawnAtTick)) ? Number(ant.spawnAtTick) : 0
+        })).concat(sim.spawnQueue.map((item) => ({
+            name: item.config.name || '',
+            x: item.config.x,
+            y: item.config.y,
+            z: item.config.z,
+            orientation: item.config.orientation,
+            rule: (item.config.transitions || []).join(' '),
+            colors: Array.isArray(item.config.stateColors) ? item.config.stateColors : [],
+            spawnAtTick: item.atTick
+        })))
+    };
+
+    var encoded = base64UrlEncode(JSON.stringify(preset));
+    return `${base}?p=${encoded}`;
+}
+
+function base64UrlEncode(text) {
+    var b64 = btoa(unescape(encodeURIComponent(String(text))));
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlDecode(text) {
+    var padded = String(text).replace(/-/g, '+').replace(/_/g, '/');
+    while (padded.length % 4) padded += '=';
+    return decodeURIComponent(escape(atob(padded)));
+}
+
+async function captureSceneSnapshotFile(filename) {
+    var sceneEl = document.getElementById('mainFrame');
+    if (!sceneEl || !sceneEl.renderer || !sceneEl.renderer.domElement) return null;
+    var canvas = sceneEl.renderer.domElement;
+
+    var blob = await new Promise((resolve) => {
+        try {
+            canvas.toBlob((b) => resolve(b), 'image/png');
+        } catch (err) {
+            resolve(null);
+        }
+    });
+    if (!blob) return null;
+
+    try {
+        return new File([blob], filename, { type: 'image/png' });
+    } catch (err) {
+        blob.name = filename;
+        return blob;
+    }
+}
+
+function downloadFile(fileOrBlob, filename) {
+    var blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'snapshot.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+loadPresetFromUrl();
 setupHud();
+draw();

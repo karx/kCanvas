@@ -5,6 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="Langton's Ant / Turmites in 3D with live ant management, palettes, and shareable presets.">
+    <meta name="theme-color" content="#0a0c10">
+
+    <link rel="canonical" href="https://karx.github.io/kCanvas/langton3d/kaaro.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Langton 3D">
+    <meta property="og:description" content="3D Langton's Ant / Turmites with live management drawer, palettes, and shareable presets.">
+    <meta property="og:image" content="/langton3d/og.png">
+    <meta property="og:image:alt" content="Langton 3D preview image">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Langton 3D">
+    <meta name="twitter:description" content="3D Langton's Ant / Turmites with live management drawer, palettes, and shareable presets.">
+    <meta name="twitter:image" content="/langton3d/og.png">
+
     <script src="https://aframe.io/releases/0.9.1/aframe.min.js"></script>
      
     <link rel="stylesheet" href="./kaaro.css">
@@ -12,7 +28,7 @@
 </head>
 
 <body>
-    <a-scene id="mainFrame" background="color: black">
+    <a-scene id="mainFrame" background="color: black" renderer="preserveDrawingBuffer: true">
         <a-entity light="type: ambient; color: #EEE"></a-entity>
         <a-entity light="type: point; color: #FFF; intensity: 0.4" position="-1 -10 -2"></a-entity>
             
@@ -31,6 +47,8 @@
                 <button class="hud__btn" id="btn-toggle" type="button">Pause</button>
                 <button class="hud__btn" id="btn-step" type="button">Step</button>
                 <button class="hud__btn hud__btn--danger" id="btn-reset" type="button">Reset</button>
+                <button class="hud__btn" id="btn-share" type="button" title="Copy a shareable URL preset">Share</button>
+                <button class="hud__btn" id="btn-snapshot" type="button" title="Share/download a snapshot image (includes preset URL)">Snapshot</button>
                 <label class="hud__label" title="Simulation steps per frame">
                     Speed
                     <input id="speed" type="range" min="1" max="30" value="1" />
@@ -75,6 +93,15 @@
                                 <option value="5" selected>5 (XY plane)</option>
                                 <option value="1">1 (YZ plane)</option>
                             </select>
+                        </label>
+                        <label class="spawn__label">
+                            Spawn @ tick
+                            <input class="spawn__input" id="spawnAtTick" type="number" value="0" min="0" />
+                        </label>
+                        <label class="spawn__label">
+                            Colors (hex, matches rule length)
+                            <input class="spawn__input" id="spawnColors" type="text" value="#12130f #5b9279 #eae6e5 #8fcb9b" />
+                            <div class="spawn__help">If a cell color isn't in this palette, this ant treats it as state 0.</div>
                         </label>
                     </div>
                     <div class="spawn__row">

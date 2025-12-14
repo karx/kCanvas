@@ -9,7 +9,14 @@ To leverage the extra dimention we have, we keep on increasing the size of the b
 
 
 ## How to Run Custom Rules
-To edit and run on a custom rule set, update `allTermites` array with custom rules, using a 'LangtonTermite' object.
+You can add ants at runtime using the UI drawer (recommended), or by editing `allTermites` in `kaaro.js`.
+
+### Color Model (Important)
+The grid stores the **actual cell color** (hex like `#ff00aa`), not a shared numeric state.
+Each ant has its own per-state **palette** (one color per rule token).
+When an ant reads a cell:
+- If the cell color exists in that ant’s palette, that palette index is the ant’s current state.
+- If the cell color is not in that ant’s palette, the ant treats it as **state 0**.
 
 ```
 LangtonTermite (
@@ -23,6 +30,10 @@ LangtonTermite (
 ```
 
 And deploy.
+
+## Shareable Presets
+Use the `Share` button in the HUD to copy a URL containing the current preset (ants + their config, and sim settings).
+Opening a shared URL loads the preset automatically via the `?p=` query param.
 
 
 #### How to deploy (using Github pages!)
