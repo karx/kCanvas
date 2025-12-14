@@ -185,11 +185,30 @@ body {
 }
 
 .sharePanel {
-    display: none;
+    display: block;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    margin-top: 0;
+
+    transition:
+        max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.2s linear,
+        margin-top 0.3s ease,
+        visibility 0.3s step-end;
 }
 
 .sharePanel.is-open {
-    display: block;
+    max-height: 1000px;
+    opacity: 1;
+    visibility: visible;
+
+    transition:
+        max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s ease-out,
+        margin-top 0.3s ease,
+        visibility 0.3s step-start;
 }
 
 .panel__title {
@@ -392,12 +411,44 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(0, 0, 0, 0.16);
     border-radius: 12px;
-    padding: 10px;
-    display: none;
+    display: block;
+    overflow: hidden;
+
+    /* Collapsed state */
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    padding: 0 10px;
+    border-width: 0;
+    margin-top: 0;
+    pointer-events: none;
+
+    transition:
+        max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.2s linear,
+        padding 0.3s ease,
+        margin-top 0.3s ease,
+        border-width 0.3s step-end,
+        visibility 0.3s step-end;
 }
 
 .spawn.is-open {
-    display: block;
+    /* Open state */
+    max-height: 600px;
+    opacity: 1;
+    visibility: visible;
+    padding: 10px;
+    border-width: 1px;
+    margin-bottom: 0;
+    pointer-events: auto;
+
+    transition:
+        max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s ease-out,
+        padding 0.3s ease,
+        margin-top 0.3s ease,
+        border-width 0.3s step-start,
+        visibility 0.3s step-start;
 }
 
 .spawn__row {
