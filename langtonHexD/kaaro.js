@@ -2,7 +2,7 @@
 var antGrid;
 var grid;
 
-var colorsToBeUsed = ["-324683-8c916f-486084-11160f-8c916f".split('-').map(x => `#${x}`)];
+var colorsToBeUsed = [..."324683-8c916f-486084-11160f-8c916f".split('-').map(x => `#${x}`)];
 
 class LangtonAntGrid {
   constructor() {
@@ -11,7 +11,7 @@ class LangtonAntGrid {
   }
 
   init(x = 20, y = 20, z = 20) {
-    console.log("init Begun");
+    // console.log("init Begun");
     grid = [];
     this.max_x = x;
     this.max_y = y;
@@ -88,7 +88,7 @@ class LangtonTermite {
   init() {}
 
   colorAndupdatePosition() {
-    console.log("update Begun");
+    // console.log("update Begun");
     this.age++;
     const currentStatus = Object.assign({}, this.currentPosition);
 
@@ -110,13 +110,13 @@ class LangtonTermite {
     );
 
     this.currentPosition.color = (colorFromGrid + 1) % this.numberOfStates;
-    console.log(`## ${this.numberOfStates}`);
-    console.log(
-      `## Color From grid at (${this.currentPosition.x}, ${this.currentPosition.y}, ${this.currentPosition.z}) = ${colorFromGrid}`
-    );
-    console.log(
-      `## New Color AT (${this.currentPosition.x}, ${this.currentPosition.y}, ${this.currentPosition.z}) = ${this.currentPosition.color}`
-    );
+    // console.log(`## ${this.numberOfStates}`);
+    // console.log(
+    //   `## Color From grid at (${this.currentPosition.x}, ${this.currentPosition.y}, ${this.currentPosition.z}) = ${colorFromGrid}`
+    // );
+    // console.log(
+    //   `## New Color AT (${this.currentPosition.x}, ${this.currentPosition.y}, ${this.currentPosition.z}) = ${this.currentPosition.color}`
+    // );
 
     //Elese if we want it not interacting with the community (or sometimes ;P - a bug Yes)
     // this.currentPosition.color = (this.currentPosition.color + 1)%(this.numberOfStates);
@@ -142,7 +142,7 @@ class LangtonTermite {
       this.currentPosition.heading,
       this.currentPosition.plane
     );
-    console.log({ calcData });
+    // console.log({ calcData });
     toAppendVector = calcData.newheadingVector;
     this.currentPosition.heading = calcData.newHeading;
 
@@ -150,7 +150,7 @@ class LangtonTermite {
     this.currentPosition.y += toAppendVector[1];
     this.currentPosition.z += toAppendVector[2];
 
-    console.log(this.currentPosition);
+    // console.log(this.currentPosition);
 
     //Stright up Undefined check
     if (
@@ -168,7 +168,7 @@ class LangtonTermite {
       grid[this.currentPosition.x][this.currentPosition.y][
         this.currentPosition.z
       ].color;
-    console.log("New color : " + this.currentPosition.color);
+    // console.log("New color : " + this.currentPosition.color);
   }
 }
 
@@ -179,7 +179,7 @@ var allTermites = [
   /* ---- EDIT THIS TO CUSTOMIZE THE TERMITE RULE SET -------- */
 
   // new LangtonTermite(1, 0, 4, ["L", "R"]),
-  new LangtonTermite(0, 0, 0, ["R1", "R2", "N", "U", "R2", "R1", "L2"], 'xyz'),
+  // new LangtonTermite(0, 0, 0, ["R1", "R2", "N", "U", "R2", "R1", "L2"], 'xyz'),
 //   new LangtonTermite(0, 0, 0, ["L", "R"], 'xyz'),
   // new LangtonTermite(0,0,0, 1),
 ];
@@ -234,7 +234,7 @@ function drawBox(position) {
     document.getElementById("mainFrame").appendChild(newBox);
   }
 
-  console.log("done A Box .");
+  // console.log("done A Box .");
 }
 
 function getColorFromColorIndex(colorIndex) {
@@ -266,9 +266,9 @@ function calculateNextVectorAndHeading(
   let newheadingVector = [1, 0, 0];
   let headingOffSet = 0;
 
-  console.log(
-    `For Direction ${direction}, heading towards: ${heading} on the plane ${plane}=0`
-  );
+  // console.log(
+  //   `For Direction ${direction}, heading towards: ${heading} on the plane ${plane}=0`
+  // );
   //First the default Inc Would be mostly same
 
   let simRotation;
@@ -349,14 +349,14 @@ function calculateNextVectorAndHeading(
           break;
         case "+y":
           inc += 3;
-          console.log("Setting Heading Offset to +y as expected");
+          // console.log("Setting Heading Offset to +y as expected");
           break;
         default:
           console.log(
             `!! Warining: Heading Direction ${heading} did not match Any Case`
           );
       }
-      console.log({ inc, headingOffSet });
+      // console.log({ inc, headingOffSet });
       simRotation = _2dRotationHeading(inc + headingOffSet);
       newheadingVector = [simRotation[0], simRotation[1], simRotation[2]];
       newHeading = getDirectionFromHeading(newheadingVector);
@@ -417,7 +417,7 @@ function calculateNextVectorAndHeading(
     default:
       break;
   }
-  console.log({ newHeading, newheadingVector });
+  // console.log({ newHeading, newheadingVector });
   return { newHeading, newheadingVector };
 }
 
@@ -455,7 +455,7 @@ function getDirectionFromHeading(heading) {
 }
 
 function _2dRotationHeading(inc) {
-  console.log("** Running Sim with " + inc);
+  // console.log("** Running Sim with " + inc);
   //this does assuming always on xy plane pointing +x
   let newheadingVector;
   inc = inc % 4;
@@ -480,7 +480,7 @@ function _2dRotationHeading(inc) {
 }
 
 function _3dRotationHeading(inc) {
-  console.log("** Running Sim with " + inc);
+  // console.log("** Running Sim with " + inc);
   //this does assuming always on xy plane pointing +x
   let newheadingVector;
   inc = inc % 6;
@@ -577,3 +577,4 @@ updateCurrentAntListDOM();
 
 draw();
 
+  

@@ -5,10 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <script src="/utils/aframe.min.js"></script>
-     
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <link rel="stylesheet" href="./kaaro.css">
-    <title>kCanvas - Hex Ant</title>
+    <title>kCanvas - 3D Langoton's Ant</title>
 </head>
 
 <body>
@@ -16,11 +15,24 @@
         <a-entity light="type: ambient; color: #EEE"></a-entity>
         <a-entity light="type: point; color: #FFF; intensity: 0.4" position="-1 -10 -2"></a-entity>
             
-            <a-entity id="rig" position="30 10 30">
-                <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true adAxis:y"></a-entity>
+            <a-entity id="rig" position="0 0 20">
+                <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true form"></a-entity>
             </a-entity>
     </a-scene>
-    
+    <div class="input-container" id="input-container">
+        <div id="currentRuleValue"></div>
+        
+        <div class="currentAnts" id="currentAnts"></div>
+        <div class="inputBoxContainer">
+            <input type="text" id="input-rules" placeholder="Enter Rule (Ex R1 R2 N U R2 R1 L2)">
+            
+            <div class="favorites" id="favorites">
+                
+            </div>
+        </div>
+        
+        
+    </div>
     <script  src="./kaaro.js"></script>
 </body>
 
