@@ -52,7 +52,9 @@ class LangtonAntGrid {
                 grid[i][j] = [];
                 for (let k=-z;k<z;k++) {
                     grid[i][j][k] = Object.assign({}, {
-                        color: null
+                        color: null,
+                        stateIndex: 0,
+                        ownerId: null
                     });
                 }
             }
@@ -66,12 +68,15 @@ class LangtonAntGrid {
         
     }
 
-    colorUpdate(x,y,z,colorHex) {
-        grid[x][y][z].color = colorHex;
+    setCell(x, y, z, stateIndex, colorHex, ownerId) {
+        if (!grid?.[x]?.[y]?.[z]) return;
+        if (Number.isFinite(Number(stateIndex))) grid[x][y][z].stateIndex = Number(stateIndex);
+        if (typeof colorHex === 'string') grid[x][y][z].color = colorHex;
+        if (Number.isFinite(Number(ownerId))) grid[x][y][z].ownerId = Number(ownerId);
     }
 
-    getColorOfGrid(x,y,z) {
-        return grid[x][y][z].color;
+    getCell(x, y, z) {
+        return grid?.[x]?.[y]?.[z] || null;
     }
 
     getLog() {
@@ -142,9 +147,12 @@ class LangtonTermite {
             return;
         }
 
-        // Interact via color: map grid color to this ant's state index; unknown colors are treated as state 0.
-        var cellColor = antGrid.getColorOfGrid(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
-        var currentStateIndex = this._getStateIndexForColor(cellColor);
+        var cell = antGrid.getCell(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
+        var cellColor = cell?.color ?? null;
+        var currentStateIndex = Number.isFinite(Number(cell?.stateIndex)) ? Number(cell.stateIndex) : this._getStateIndexForColor(cellColor);
+        if (!Number.isFinite(currentStateIndex)) currentStateIndex = 0;
+        if (currentStateIndex < 0) currentStateIndex = 0;
+        if (currentStateIndex >= this.numberOfStates) currentStateIndex = currentStateIndex % this.numberOfStates;
         this.currentPosition.stateIndex = currentStateIndex;
         var transitionToken = this.stateTransitions[currentStateIndex] || '?';
         var nextStateIndex = (currentStateIndex + 1)%(this.numberOfStates);
@@ -155,8 +163,7 @@ class LangtonTermite {
 
 
         
-        antGrid.colorUpdate(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z, nextColor);
-        setOwnerForCell(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z, this.id);
+        antGrid.setCell(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z, nextStateIndex, nextColor, this.id);
 
         drawBox(this.currentPosition);
         
@@ -217,9 +224,13 @@ class LangtonTermite {
         }
         // this.currentPosition.color = "#E3E3E3";
         drawBox(this.currentPosition);
-        var nextCellColor = grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color;
-        this.currentPosition.stateIndex = this._getStateIndexForColor(nextCellColor);
-        this.currentPosition.color = nextCellColor;
+        var nextCell = antGrid.getCell(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
+        var nextCellState = Number.isFinite(Number(nextCell?.stateIndex)) ? Number(nextCell.stateIndex) : this._getStateIndexForColor(nextCell?.color);
+        if (!Number.isFinite(nextCellState)) nextCellState = 0;
+        if (nextCellState < 0) nextCellState = 0;
+        if (nextCellState >= this.numberOfStates) nextCellState = nextCellState % this.numberOfStates;
+        this.currentPosition.stateIndex = nextCellState;
+        this.currentPosition.color = nextCell?.color ?? null;
         // console.log("New color : " + this.currentPosition.color);
 
         this.steps += 1;
@@ -372,11 +383,6 @@ function getAntColorForState(ant, stateIndex) {
     var palette = ant?.stateColors;
     if (Array.isArray(palette) && palette[stateIndex]) return palette[stateIndex];
     return getColorFromColorIndex(stateIndex);
-}
-
-function setOwnerForCell(x, y, z, antId) {
-    if (!grid?.[x]?.[y]?.[z]) return;
-    grid[x][y][z].ownerId = antId;
 }
 
 function generatePaletteFromHue(baseHue, count) {
@@ -697,9 +703,7 @@ function setupHud() {
     }
 
     ui.presets = buildCuratedPresets();
-    presetListEl.innerHTML = ui.presets.map((p, idx) => (
-        `<button class="presetBtn" type="button" data-preset-idx="${idx}" title="${escapeHtml(p.description || '')}">${escapeHtml(p.name)}</button>`
-    )).join('');
+    presetListEl.innerHTML = renderPresetGalleryHtml(ui.presets);
     presetListEl.addEventListener('click', (event) => {
         var target = event.target;
         var idx = Number(target?.getAttribute?.('data-preset-idx'));
@@ -791,6 +795,7 @@ function spawnAnt(config) {
     var y = Number(config.y);
     var z = Number(config.z);
     var orientation = Number(config.orientation);
+    var heading = normalizeHeading(config.heading);
     var rule = (config.rule || '').trim();
     var colorsStr = (config.colors || '').trim();
     var spawnAtTick = Number(config.spawnAtTick);
@@ -821,6 +826,7 @@ function spawnAnt(config) {
         y: y,
         z: z,
         orientation: orientation,
+        heading: heading,
         transitions: transitions,
         stateColors: palette,
         spawnAtTick: spawnAtTick
@@ -848,9 +854,35 @@ function spawnAntNow(antConfig) {
     ant.stateColors = antConfig.stateColors;
     ant.spawnAtTick = antConfig.spawnAtTick;
     ant.bornAtTick = sim.totalTicks;
+    ant.startPosition.heading = antConfig.heading;
+    ant.currentPosition.heading = antConfig.heading;
 
     allTermites.push(ant);
     return ant;
+}
+
+function normalizeHeading(heading) {
+    if (Number.isFinite(Number(heading))) {
+        var h = Number(heading);
+        if ([0, 1, 2, 3].includes(h)) return h;
+    }
+    var s = String(heading || '').trim().toLowerCase();
+    switch (s) {
+        case 'n':
+        case 'north':
+            return 0;
+        case 'e':
+        case 'east':
+            return 1;
+        case 's':
+        case 'south':
+            return 2;
+        case 'w':
+        case 'west':
+            return 3;
+        default:
+            return 0;
+    }
 }
 
 function flushSpawnQueue() {
@@ -927,6 +959,7 @@ function applyPresetObject(preset) {
             y: a.y,
             z: a.z,
             orientation: a.orientation,
+            heading: a.heading,
             rule: a.rule,
             colors: Array.isArray(colors) ? colors.join(' ') : '',
             spawnAtTick: a.spawnAtTick || 0
@@ -939,11 +972,19 @@ function applyPresetObject(preset) {
 }
 
 function parseRuleString(text) {
-    return String(text)
+    var raw = String(text).trim();
+    if (!raw) return [];
+    var tokens = raw
         .replace(/,/g, ' ')
         .split(/\s+/g)
         .map((t) => t.trim().toUpperCase())
         .filter(Boolean);
+
+    // Support compact strings like "LLRR" or "RLR" (no separators).
+    if (tokens.length === 1 && /^[LRU]+$/.test(tokens[0])) {
+        return tokens[0].split('');
+    }
+    return tokens;
 }
 
 function parseColorsString(text) {
@@ -1061,6 +1102,7 @@ function loadPresetFromUrl() {
                     y: a.y,
                     z: a.z,
                     orientation: a.orientation,
+                    heading: a.heading,
                     rule: a.rule,
                     colors: Array.isArray(colors) ? colors.join(' ') : '',
                     spawnAtTick: a.spawnAtTick || 0
@@ -1105,6 +1147,7 @@ function buildShareUrl() {
             y: ant.startPosition.y,
             z: ant.startPosition.z,
             orientation: ant.startPosition.orientation,
+            heading: ant.startPosition.heading,
             rule: (ant.stateTransitions || []).join(' '),
             colors: Array.isArray(ant.stateColors) ? ant.stateColors : [],
             spawnAtTick: Number.isFinite(Number(ant.spawnAtTick)) ? Number(ant.spawnAtTick) : 0
@@ -1114,6 +1157,7 @@ function buildShareUrl() {
             y: item.config.y,
             z: item.config.z,
             orientation: item.config.orientation,
+            heading: item.config.heading,
             rule: (item.config.transitions || []).join(' '),
             colors: Array.isArray(item.config.stateColors) ? item.config.stateColors : [],
             spawnAtTick: item.atTick
@@ -1243,6 +1287,28 @@ function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function renderPresetGalleryHtml(presets) {
+    var items = Array.isArray(presets) ? presets : [];
+    var categories = [];
+    var byCat = {};
+
+    items.forEach((p, idx) => {
+        var cat = p.category || 'Presets';
+        if (!byCat[cat]) {
+            byCat[cat] = [];
+            categories.push(cat);
+        }
+        byCat[cat].push({ preset: p, idx: idx });
+    });
+
+    return categories.map((cat) => {
+        var buttons = byCat[cat].map(({ preset, idx }) =>
+            `<button class="presetBtn" type="button" data-preset-idx="${idx}" title="${escapeHtml(preset.description || '')}">${escapeHtml(preset.name)}</button>`
+        ).join('');
+        return `<div class="presetGroup"><div class="presetGroup__title">${escapeHtml(cat)}</div><div class="presetList">${buttons}</div></div>`;
+    }).join('');
+}
+
 function buildCuratedPresets() {
     // Note: these are classic/common turmite-style rule tables (L/R only) adapted to this sim.
     return [
@@ -1326,6 +1392,143 @@ function buildCuratedPresets() {
                 ants: [
                     { name: 'Starter', x: 0, y: 0, z: 0, orientation: 5, rule: 'L R', colors: ['#0a0c10', '#5b9279'], spawnAtTick: 0 },
                     { name: 'Joiner', x: 0, y: 0, z: 25, orientation: 1, rule: 'L R R L', colors: ['#0a0c10', '#486084', '#8c916f', '#324683'], spawnAtTick: 1500 }
+                ]
+            }
+        },
+
+        /* ---- Requested categorized presets ---- */
+        {
+            category: 'The Geometric Architects',
+            name: 'The Cardioid',
+            description: 'LLRR (4 colors) — symmetry-focused growth.',
+            preset: {
+                version: 2,
+                grid: { x: 130, y: 130, z: 130 },
+                sim: { running: true, stepsPerFrame: 4 },
+                ants: [
+                    { name: 'Cardioid', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'LLRR', baseHue: 140, spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            category: 'The Geometric Architects',
+            name: 'The Square',
+            description: 'LRRRRRLLR (9 colors) — dense space-filling square growth.',
+            preset: {
+                version: 2,
+                grid: { x: 140, y: 140, z: 140 },
+                sim: { running: true, stepsPerFrame: 5 },
+                ants: [
+                    { name: 'Square', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'LRRRRRLLR', baseHue: 210, spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            category: 'The Geometric Architects',
+            name: 'The Triangle',
+            description: 'RRLLLRLLLRRR (12 colors) — triangular wedge; later migrates.',
+            preset: {
+                version: 2,
+                grid: { x: 160, y: 160, z: 160 },
+                sim: { running: true, stepsPerFrame: 6 },
+                ants: [
+                    { name: 'Triangle', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RRLLLRLLLRRR', baseHue: 35, spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            category: 'The Geometric Architects',
+            name: 'The Spiral',
+            description: 'LRRRRLLLRRR (11 colors) — clean architectural square spiral.',
+            preset: {
+                version: 2,
+                grid: { x: 150, y: 150, z: 150 },
+                sim: { running: true, stepsPerFrame: 5 },
+                ants: [
+                    { name: 'Spiral', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'LRRRRLLLRRR', baseHue: 280, spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            category: 'The Highwaymen',
+            name: 'Classic Highway',
+            description: 'RL (2 colors) — chaos, then the classic diagonal highway.',
+            preset: {
+                version: 2,
+                grid: { x: 140, y: 140, z: 140 },
+                sim: { running: true, stepsPerFrame: 4 },
+                ants: [
+                    { name: 'Classic', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 150, spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            category: 'The Highwaymen',
+            name: 'Convolution',
+            description: 'LLRRRLRLRLLR (12 colors) — thick braided highway.',
+            preset: {
+                version: 2,
+                grid: { x: 160, y: 160, z: 160 },
+                sim: { running: true, stepsPerFrame: 6 },
+                ants: [
+                    { name: 'Convolution', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'LLRRRLRLRLLR', baseHue: 190, spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            category: 'The Highwaymen',
+            name: 'The Weaver',
+            description: 'RLR (3 colors) — chaotic fuzzball growth (may not stabilize).',
+            preset: {
+                version: 2,
+                grid: { x: 140, y: 140, z: 140 },
+                sim: { running: true, stepsPerFrame: 7 },
+                ants: [
+                    { name: 'Weaver', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RLR', baseHue: 320, spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            category: 'Multi-Ant Orchestrations',
+            name: 'The Rorschach',
+            description: 'RL (2 colors) — two mirrored ants produce an inkblot symmetry.',
+            preset: {
+                version: 2,
+                grid: { x: 140, y: 140, z: 140 },
+                sim: { running: true, stepsPerFrame: 4 },
+                ants: [
+                    { name: 'Ant 1', x: -1, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 140, spawnAtTick: 0 },
+                    { name: 'Ant 2', x: 1, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 40, spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            category: 'Multi-Ant Orchestrations',
+            name: 'The Collider',
+            description: 'RL (2 colors) — a second ant intercepts the highway and resets chaos.',
+            preset: {
+                version: 2,
+                grid: { x: 200, y: 200, z: 200 },
+                sim: { running: true, stepsPerFrame: 4 },
+                ants: [
+                    { name: 'Chaos Maker', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 130, spawnAtTick: 0 },
+                    { name: 'Sniper', x: 30, y: 30, z: 0, orientation: 5, heading: 'west', rule: 'RL', baseHue: 10, spawnAtTick: 0 }
+                ]
+            }
+        },
+        {
+            category: 'Multi-Ant Orchestrations',
+            name: 'The Galaxy',
+            description: 'RL (2 colors) — four ants with rotational symmetry form a galaxy-like burst.',
+            preset: {
+                version: 2,
+                grid: { x: 200, y: 200, z: 200 },
+                sim: { running: true, stepsPerFrame: 3 },
+                ants: [
+                    { name: 'Ant 1', x: 0, y: 10, z: 0, orientation: 5, heading: 'south', rule: 'RL', baseHue: 210, spawnAtTick: 0 },
+                    { name: 'Ant 2', x: 0, y: -10, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 30, spawnAtTick: 0 },
+                    { name: 'Ant 3', x: 10, y: 0, z: 0, orientation: 5, heading: 'west', rule: 'RL', baseHue: 120, spawnAtTick: 0 },
+                    { name: 'Ant 4', x: -10, y: 0, z: 0, orientation: 5, heading: 'east', rule: 'RL', baseHue: 300, spawnAtTick: 0 }
                 ]
             }
         }

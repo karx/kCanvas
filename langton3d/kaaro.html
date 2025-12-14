@@ -169,8 +169,8 @@
                 <div class="modal__section">
                     <div class="modal__sectionTitle">Colors / State Mapping</div>
                     <div class="modal__text">
-                        The grid stores the actual cell color (hex). Each ant has its own palette (one color per state).
-                        When an ant lands on a cell whose color isn't in its palette, it treats it as state 0.
+                        Cells store a shared numeric state index (for behavior) and a hex color (for display).
+                        Ants interact via the shared state index; each ant's palette only controls the colors it paints.
                     </div>
                 </div>
                 <div class="modal__section">

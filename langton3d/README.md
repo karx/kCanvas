@@ -12,11 +12,10 @@ To leverage the extra dimention we have, we keep on increasing the size of the b
 You can add ants at runtime using the UI drawer (recommended), or by editing `allTermites` in `kaaro.js`.
 
 ### Color Model (Important)
-The grid stores the **actual cell color** (hex like `#ff00aa`), not a shared numeric state.
-Each ant has its own per-state **palette** (one color per rule token).
-When an ant reads a cell:
-- If the cell color exists in that ant’s palette, that palette index is the ant’s current state.
-- If the cell color is not in that ant’s palette, the ant treats it as **state 0**.
+Each cell stores a shared numeric `stateIndex` (used for all ants’ rules), and a display `color` (hex like `#ff00aa`).
+Each ant has its own per-state **palette** (one color per rule token), used when that ant paints a cell.
+For multi-ant runs, ants interact via the shared `stateIndex` (not by trying to interpret each other’s colors).
+If an ant lands on a cell whose `stateIndex` exceeds its own number of states, it uses `stateIndex % numberOfStates`.
 
 ```
 LangtonTermite (

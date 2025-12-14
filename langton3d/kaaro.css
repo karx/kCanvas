@@ -227,6 +227,19 @@ body {
     gap: 8px;
 }
 
+.presetGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.presetGroup__title {
+    font-size: 12px;
+    font-weight: 750;
+    opacity: 0.9;
+    letter-spacing: 0.2px;
+}
+
 .presetBtn {
     cursor: pointer;
     border: 1px solid rgba(255, 255, 255, 0.14);
