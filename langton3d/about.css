@@ -1,0 +1,106 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #07080b;
+    color: #e9eef6;
+}
+
+.page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 18px 14px 40px;
+}
+
+.top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.brand__title {
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    font-size: 22px;
+}
+
+.brand__sub {
+    margin-top: 4px;
+    font-size: 13px;
+    opacity: 0.85;
+}
+
+.nav {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-weight: 650;
+    font-size: 13px;
+}
+
+.btn:hover {
+    background: rgba(255, 255, 255, 0.10);
+}
+
+.card {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(10, 12, 16, 0.64);
+    backdrop-filter: blur(10px);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.card h2 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    letter-spacing: 0.2px;
+}
+
+.card p {
+    margin: 0;
+    opacity: 0.92;
+    line-height: 1.45;
+    font-size: 14px;
+}
+
+.card ul {
+    margin: 0;
+    padding-left: 18px;
+    opacity: 0.92;
+    line-height: 1.55;
+    font-size: 14px;
+}
+
+code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.95em;
+}
+
+a {
+    color: inherit;
+    opacity: 0.95;
+}
+
+.footer {
+    margin-top: 10px;
+    font-size: 12px;
+    opacity: 0.8;
+}

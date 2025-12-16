@@ -47,7 +47,9 @@ class LangtonAntGrid {
                 grid[i][j] = [];
                 for (let k=-z;k<z;k++) {
                     grid[i][j][k] = Object.assign({}, {
-                        color: null
+                        color: null,
+                        stateIndex: 0,
+                        ownerId: null
                     });
                 }
             }
@@ -61,12 +63,24 @@ class LangtonAntGrid {
         
     }
 
-    colorUpdate(x,y,z,colorHex) {
-        grid[x][y][z].color = colorHex;
+    setCell(x, y, z, stateIndex, colorHex, ownerId) {
+        if (!grid?.[x]?.[y]?.[z]) return;
+        if (Number.isFinite(Number(stateIndex))) grid[x][y][z].stateIndex = Number(stateIndex);
+        if (typeof colorHex === 'string') grid[x][y][z].color = colorHex;
+        if (Number.isFinite(Number(ownerId))) grid[x][y][z].ownerId = Number(ownerId);
     }
 
-    getColorOfGrid(x,y,z) {
-        return grid[x][y][z].color;
+    getCell(x, y, z) {
+        return grid?.[x]?.[y]?.[z] || null;
+    }
+
+    // Back-compat helpers (not used by the sim anymore)
+    colorUpdate(x, y, z, colorHex) {
+        this.setCell(x, y, z, grid?.[x]?.[y]?.[z]?.stateIndex ?? 0, colorHex, grid?.[x]?.[y]?.[z]?.ownerId ?? null);
+    }
+
+    getColorOfGrid(x, y, z) {
+        return grid?.[x]?.[y]?.[z]?.color ?? null;
     }
 
     getLog() {
@@ -137,9 +151,12 @@ class LangtonTermite {
             return;
         }
 
-        // Interact via color: map grid color to this ant's state index; unknown colors are treated as state 0.
-        var cellColor = antGrid.getColorOfGrid(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
-        var currentStateIndex = this._getStateIndexForColor(cellColor);
+        // Multi-ant interaction uses shared per-cell stateIndex (color is only display).
+        var cell = antGrid.getCell(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
+        var currentStateIndex = Number(cell?.stateIndex ?? 0);
+        if (!Number.isFinite(currentStateIndex)) currentStateIndex = 0;
+        if (currentStateIndex < 0) currentStateIndex = 0;
+        currentStateIndex = currentStateIndex % this.numberOfStates;
         this.currentPosition.stateIndex = currentStateIndex;
         var transitionToken = this.stateTransitions[currentStateIndex] || '?';
         var nextStateIndex = (currentStateIndex + 1)%(this.numberOfStates);
@@ -150,8 +167,7 @@ class LangtonTermite {
 
 
         
-        antGrid.colorUpdate(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z, nextColor);
-        setOwnerForCell(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z, this.id);
+        antGrid.setCell(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z, nextStateIndex, nextColor, this.id);
 
         drawBox(this.currentPosition);
         
@@ -212,9 +228,13 @@ class LangtonTermite {
         }
         // this.currentPosition.color = "#E3E3E3";
         drawBox(this.currentPosition);
-        var nextCellColor = grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z].color;
-        this.currentPosition.stateIndex = this._getStateIndexForColor(nextCellColor);
-        this.currentPosition.color = nextCellColor;
+        var nextCell = antGrid.getCell(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z);
+        var nextIdx = Number(nextCell?.stateIndex ?? 0);
+        if (!Number.isFinite(nextIdx)) nextIdx = 0;
+        if (nextIdx < 0) nextIdx = 0;
+        nextIdx = nextIdx % this.numberOfStates;
+        this.currentPosition.stateIndex = nextIdx;
+        this.currentPosition.color = nextCell?.color ?? null;
         // console.log("New color : " + this.currentPosition.color);
 
         this.steps += 1;
@@ -260,12 +280,6 @@ class LangtonTermite {
     _pushRecentStep(step) {
         this.recentSteps.unshift(step);
         if (this.recentSteps.length > this.maxRecentSteps) this.recentSteps.length = this.maxRecentSteps;
-    }
-
-    _getStateIndexForColor(colorHex) {
-        if (!colorHex) return 0;
-        var idx = this.stateColors.findIndex(c => (String(c).toLowerCase() === String(colorHex).toLowerCase()));
-        return idx >= 0 ? idx : 0;
     }
     
 }
@@ -369,11 +383,6 @@ function getAntColorForState(ant, stateIndex) {
     return getColorFromColorIndex(stateIndex);
 }
 
-function setOwnerForCell(x, y, z, antId) {
-    if (!grid?.[x]?.[y]?.[z]) return;
-    grid[x][y][z].ownerId = antId;
-}
-
 function generatePaletteFromHue(baseHue, count) {
     var c = Number(count);
     if (!Number.isFinite(c) || c < 2) c = 2;
@@ -426,8 +435,25 @@ function setupHud() {
     var toggleSpawnEl = document.getElementById('btn-toggle-spawn');
     var shareEl = document.getElementById('btn-share');
     var snapshotEl = document.getElementById('btn-snapshot');
+    var fullscreenEl = document.getElementById('btn-fullscreen');
     var colorsEl = document.getElementById('spawnColors');
 
+    // Share/import panel (optional)
+    var sharePanelBtnEl = document.getElementById('btn-sharepanel');
+    var sharePanelEl = document.getElementById('sharePanel');
+    var shareUrlEl = document.getElementById('shareUrl');
+    var copyShareEl = document.getElementById('btn-copy-share');
+    var loadPresetEl = document.getElementById('loadPreset');
+    var loadPresetBtnEl = document.getElementById('btn-load-preset');
+    var presetListEl = document.getElementById('presetList');
+
+    // Help modal (optional)
+    var helpBtnEl = document.getElementById('btn-help');
+    var helpModalEl = document.getElementById('helpModal');
+    var helpCloseEl = document.getElementById('btn-close-help');
+    var helpDontShowEl = document.getElementById('helpDontShow');
+
+    // Core UI required
     if (!speedEl || !toggleEl || !stepEl || !resetEl || !antListEl || !antCountEl || !simStatusEl || !spawnFormEl || !spawnErrorEl || !toggleSpawnEl || !shareEl || !snapshotEl || !colorsEl) {
         return;
     }
@@ -464,18 +490,25 @@ function setupHud() {
 
     shareEl.addEventListener('click', async () => {
         var url = buildShareUrl();
-        try {
-            await navigator.clipboard.writeText(url);
+        var didEnter = await maybeEnterFullscreenForShare();
+        var ok = await copyTextToClipboard(url);
+        if (ok) {
             shareEl.textContent = 'Copied';
             setTimeout(() => { shareEl.textContent = 'Share'; }, 900);
-        } catch (err) {
-            window.prompt('Copy this URL', url);
+            if (shareUrlEl) shareUrlEl.value = url;
+        } else {
+            shareEl.textContent = 'Copy failed';
+            setTimeout(() => { shareEl.textContent = 'Share'; }, 1200);
+            console.warn('Share URL copy failed:', url);
         }
+        await maybeExitFullscreenAfterShare(didEnter);
     });
 
     snapshotEl.addEventListener('click', async () => {
         var shareUrl = buildShareUrl();
         try {
+            var didEnter = await maybeEnterFullscreenForShare();
+            await delay(90);
             var file = await captureSceneSnapshotFile('langton3d.png');
             if (navigator.share && file) {
                 await navigator.share({
@@ -484,23 +517,159 @@ function setupHud() {
                     url: shareUrl,
                     files: [file]
                 });
+                await maybeExitFullscreenAfterShare(didEnter);
                 return;
             }
             if (file) {
                 downloadFile(file, 'langton3d.png');
-                try {
-                    await navigator.clipboard.writeText(shareUrl);
-                } catch (e) {}
+                await copyTextToClipboard(shareUrl);
                 snapshotEl.textContent = 'Downloaded';
                 setTimeout(() => { snapshotEl.textContent = 'Snapshot'; }, 900);
+                await maybeExitFullscreenAfterShare(didEnter);
                 return;
             }
-            window.prompt('Copy this URL', shareUrl);
+            await maybeExitFullscreenAfterShare(didEnter);
+            console.warn('Snapshot capture failed; preset URL:', shareUrl);
         } catch (err) {
             console.warn('Snapshot failed', err);
-            window.prompt('Copy this URL', shareUrl);
+            await maybeExitFullscreenAfterShare(false);
+            console.warn('Preset URL:', shareUrl);
         }
     });
+
+    function syncFullscreenUi() {
+        if (!fullscreenEl) return;
+        fullscreenEl.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+    }
+
+    if (fullscreenEl) {
+        fullscreenEl.addEventListener('click', async () => {
+            try {
+                if (document.fullscreenElement) await document.exitFullscreen();
+                else await document.documentElement.requestFullscreen();
+            } catch (err) {
+                console.warn('Fullscreen toggle failed', err);
+            } finally {
+                syncFullscreenUi();
+            }
+        });
+        syncFullscreenUi();
+    }
+
+    function toggleSharePanel(forceOpen) {
+        if (!sharePanelEl) return;
+        var shouldOpen = (typeof forceOpen === 'boolean') ? forceOpen : !sharePanelEl.classList.contains('is-open');
+        if (shouldOpen) {
+            sharePanelEl.classList.add('is-open');
+            sharePanelEl.setAttribute('aria-hidden', 'false');
+            if (shareUrlEl) shareUrlEl.value = buildShareUrl();
+        } else {
+            sharePanelEl.classList.remove('is-open');
+            sharePanelEl.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    if (sharePanelBtnEl) {
+        sharePanelBtnEl.addEventListener('click', () => toggleSharePanel());
+    }
+
+    if (copyShareEl && shareUrlEl) {
+        copyShareEl.addEventListener('click', async () => {
+            var url = buildShareUrl();
+            var ok = await copyTextToClipboard(url);
+            if (ok) {
+                copyShareEl.textContent = 'Copied';
+                setTimeout(() => { copyShareEl.textContent = 'Copy'; }, 900);
+                shareUrlEl.value = url;
+            } else {
+                copyShareEl.textContent = 'Copy failed';
+                setTimeout(() => { copyShareEl.textContent = 'Copy'; }, 1200);
+            }
+        });
+    }
+
+    if (loadPresetBtnEl && loadPresetEl) {
+        loadPresetBtnEl.addEventListener('click', () => {
+            var raw = (loadPresetEl.value || '').trim();
+            if (!raw) return;
+            try {
+                applyPresetFromInput(raw);
+                loadPresetEl.value = '';
+                toggleSharePanel(true);
+                if (shareUrlEl) shareUrlEl.value = buildShareUrl();
+            } catch (err) {
+                console.warn('Preset load failed', err);
+            }
+        });
+        loadPresetEl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                loadPresetBtnEl.click();
+            }
+        });
+    }
+
+    if (presetListEl) {
+        var presets = buildCuratedPresets();
+        presetListEl.innerHTML = renderPresetGalleryHtml(presets);
+        presetListEl.addEventListener('click', (event) => {
+            var idx = Number(event.target?.getAttribute?.('data-preset-idx'));
+            if (!Number.isFinite(idx)) return;
+            var p = presets[idx];
+            if (!p) return;
+            applyPresetObject(p.preset);
+            toggleSharePanel(true);
+            if (shareUrlEl) shareUrlEl.value = buildShareUrl();
+        });
+    }
+
+    function openHelpModal() {
+        if (!helpModalEl || !helpDontShowEl) return;
+        helpModalEl.classList.add('is-open');
+        helpModalEl.setAttribute('aria-hidden', 'false');
+        helpDontShowEl.checked = (localStorage.getItem('langton3d_help_dont_show') === '1');
+    }
+
+    function closeHelpModal() {
+        if (!helpModalEl || !helpDontShowEl) return;
+        helpModalEl.classList.remove('is-open');
+        helpModalEl.setAttribute('aria-hidden', 'true');
+        if (helpDontShowEl.checked) localStorage.setItem('langton3d_help_dont_show', '1');
+        else localStorage.removeItem('langton3d_help_dont_show');
+    }
+
+    if (helpBtnEl) helpBtnEl.addEventListener('click', () => openHelpModal());
+    if (helpCloseEl) helpCloseEl.addEventListener('click', () => closeHelpModal());
+    if (helpModalEl) {
+        helpModalEl.addEventListener('click', (event) => {
+            if (event.target === helpModalEl) closeHelpModal();
+        });
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented) return;
+        var tag = (event.target && event.target.tagName) ? event.target.tagName.toLowerCase() : '';
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+        if (event.code === 'Space') {
+            event.preventDefault();
+            sim.running = !sim.running;
+            renderHud(true);
+        } else if (event.key === 'n' || event.key === 'N') {
+            sim.pendingSingleSteps += 1;
+            sim.running = false;
+            renderHud(true);
+        } else if (event.key === 'r' || event.key === 'R') {
+            resetSimulation();
+            renderHud(true);
+        } else if (event.key === 'h' || event.key === 'H' || event.key === '?') {
+            openHelpModal();
+        }
+    });
+
+    if (helpModalEl && helpDontShowEl && localStorage.getItem('langton3d_help_dont_show') !== '1') {
+        setTimeout(() => openHelpModal(), 250);
+    }
 
     spawnFormEl.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -657,6 +826,7 @@ function spawnAnt(config) {
     var y = Number(config.y);
     var z = Number(config.z);
     var orientation = Number(config.orientation);
+    var heading = normalizeHeading(config.heading);
     var rule = (config.rule || '').trim();
     var colorsStr = (config.colors || '').trim();
     var spawnAtTick = Number(config.spawnAtTick);
@@ -687,6 +857,7 @@ function spawnAnt(config) {
         y: y,
         z: z,
         orientation: orientation,
+        heading: heading,
         transitions: transitions,
         stateColors: palette,
         spawnAtTick: spawnAtTick
@@ -714,6 +885,8 @@ function spawnAntNow(antConfig) {
     ant.stateColors = antConfig.stateColors;
     ant.spawnAtTick = antConfig.spawnAtTick;
     ant.bornAtTick = sim.totalTicks;
+    ant.startPosition.heading = antConfig.heading;
+    ant.currentPosition.heading = antConfig.heading;
 
     allTermites.push(ant);
     return ant;
@@ -739,11 +912,19 @@ function resetSimulation() {
 }
 
 function parseRuleString(text) {
-    return String(text)
+    var raw = String(text).trim();
+    if (!raw) return [];
+    var tokens = raw
         .replace(/,/g, ' ')
         .split(/\s+/g)
         .map((t) => t.trim().toUpperCase())
         .filter(Boolean);
+
+    // Support compact strings like "LLRR" or "RLR" (no separators).
+    if (tokens.length === 1 && /^[LRU]+$/.test(tokens[0])) {
+        return tokens[0].split('');
+    }
+    return tokens;
 }
 
 function parseColorsString(text) {
@@ -861,6 +1042,7 @@ function loadPresetFromUrl() {
                     y: a.y,
                     z: a.z,
                     orientation: a.orientation,
+                    heading: a.heading,
                     rule: a.rule,
                     colors: Array.isArray(colors) ? colors.join(' ') : '',
                     spawnAtTick: a.spawnAtTick || 0
@@ -882,7 +1064,12 @@ function loadPresetFromUrl() {
 }
 
 function buildShareUrl() {
-    var base = window.location.href.split('?')[0].split('#')[0];
+    var baseUrl = new URL(window.location.href);
+    baseUrl.search = '';
+    baseUrl.hash = '';
+    if (!baseUrl.pathname.endsWith('/langton3d/kaaro.html')) {
+        baseUrl.pathname = '/langton3d/kaaro.html';
+    }
     var preset = {
         version: 2,
         grid: {
@@ -900,6 +1087,7 @@ function buildShareUrl() {
             y: ant.startPosition.y,
             z: ant.startPosition.z,
             orientation: ant.startPosition.orientation,
+            heading: ant.startPosition.heading,
             rule: (ant.stateTransitions || []).join(' '),
             colors: Array.isArray(ant.stateColors) ? ant.stateColors : [],
             spawnAtTick: Number.isFinite(Number(ant.spawnAtTick)) ? Number(ant.spawnAtTick) : 0
@@ -909,6 +1097,7 @@ function buildShareUrl() {
             y: item.config.y,
             z: item.config.z,
             orientation: item.config.orientation,
+            heading: item.config.heading,
             rule: (item.config.transitions || []).join(' '),
             colors: Array.isArray(item.config.stateColors) ? item.config.stateColors : [],
             spawnAtTick: item.atTick
@@ -916,7 +1105,8 @@ function buildShareUrl() {
     };
 
     var encoded = base64UrlEncode(JSON.stringify(preset));
-    return `${base}?p=${encoded}`;
+    baseUrl.searchParams.set('p', encoded);
+    return baseUrl.toString();
 }
 
 function base64UrlEncode(text) {
@@ -930,9 +1120,196 @@ function base64UrlDecode(text) {
     return decodeURIComponent(escape(atob(padded)));
 }
 
+async function copyTextToClipboard(text) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(String(text));
+            return true;
+        }
+    } catch (err) {}
+
+    try {
+        var ta = document.createElement('textarea');
+        ta.value = String(text);
+        ta.setAttribute('readonly', 'readonly');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        var ok = document.execCommand('copy');
+        ta.remove();
+        return !!ok;
+    } catch (err) {
+        return false;
+    }
+}
+
+async function maybeEnterFullscreenForShare() {
+    try {
+        if (document.fullscreenElement) return false;
+        await document.documentElement.requestFullscreen();
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
+async function maybeExitFullscreenAfterShare(didEnter) {
+    try {
+        if (!didEnter) return;
+        if (!document.fullscreenElement) return;
+        await document.exitFullscreen();
+    } catch (err) {}
+}
+
+function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeHeading(heading) {
+    if (Number.isFinite(Number(heading))) {
+        var h = Number(heading);
+        if ([0, 1, 2, 3].includes(h)) return h;
+    }
+    var s = String(heading || '').trim().toLowerCase();
+    switch (s) {
+        case 'n':
+        case 'north':
+            return 0;
+        case 'e':
+        case 'east':
+            return 1;
+        case 's':
+        case 'south':
+            return 2;
+        case 'w':
+        case 'west':
+            return 3;
+        default:
+            return 0;
+    }
+}
+
+function applyPresetFromInput(input) {
+    var raw = String(input).trim();
+    var encoded = raw;
+
+    if (/^https?:\/\//i.test(raw)) {
+        var url = new URL(raw);
+        encoded = url.searchParams.get('p') || '';
+    } else {
+        encoded = raw.replace(/^[?#]/, '');
+        if (encoded.startsWith('p=')) encoded = encoded.slice(2);
+        else if (encoded.includes('p=')) {
+            var params = new URLSearchParams(encoded);
+            encoded = params.get('p') || '';
+        }
+    }
+
+    if (!encoded) throw new Error('No preset found in input');
+    var json = base64UrlDecode(encoded);
+    var preset = JSON.parse(json);
+    applyPresetObject(preset);
+}
+
+function applyPresetObject(preset) {
+    if (!preset || (preset.version !== 1 && preset.version !== 2)) throw new Error('Unsupported preset');
+
+    document.querySelectorAll('[id^=\"kLang-3d-\"]').forEach((node) => node.remove());
+
+    var gridCfg = preset.grid || {};
+    antGrid.init(Number(gridCfg.x || 100), Number(gridCfg.y || 100), Number(gridCfg.z || 100));
+
+    sim.spawnQueue = [];
+    sim.totalTicks = 0;
+    sim.pendingSingleSteps = 0;
+
+    var simCfg = preset.sim || {};
+    if (typeof simCfg.running === 'boolean') sim.running = simCfg.running;
+    if (Number.isFinite(Number(simCfg.stepsPerFrame))) sim.stepsPerFrame = Math.max(1, Math.min(30, Number(simCfg.stepsPerFrame)));
+
+    allTermites = [];
+    nextAntId = 1;
+
+    var ants = Array.isArray(preset.ants) ? preset.ants : [];
+    ants.forEach((a) => {
+        var colors = a.colors;
+        if ((!Array.isArray(colors) || colors.length === 0) && Number.isFinite(Number(a.baseHue))) {
+            colors = generatePaletteFromHue(Number(a.baseHue), parseRuleString(a.rule || '').length || 2);
+        }
+        spawnAnt({
+            name: a.name || '',
+            x: a.x,
+            y: a.y,
+            z: a.z,
+            orientation: a.orientation,
+            heading: a.heading,
+            rule: a.rule,
+            colors: Array.isArray(colors) ? colors.join(' ') : '',
+            spawnAtTick: a.spawnAtTick || 0
+        });
+    });
+
+    try { history.replaceState({}, '', buildShareUrl()); } catch (err) {}
+}
+
+function renderPresetGalleryHtml(presets) {
+    var items = Array.isArray(presets) ? presets : [];
+    var categories = [];
+    var byCat = {};
+
+    items.forEach((p, idx) => {
+        var cat = p.category || 'Presets';
+        if (!byCat[cat]) {
+            byCat[cat] = [];
+            categories.push(cat);
+        }
+        byCat[cat].push({ preset: p, idx: idx });
+    });
+
+    return categories.map((cat) => {
+        var buttons = byCat[cat].map(({ preset, idx }) =>
+            `<button class=\"presetBtn\" type=\"button\" data-preset-idx=\"${idx}\" title=\"${escapeHtml(preset.description || '')}\">${escapeHtml(preset.name)}</button>`
+        ).join('');
+        return `<div class=\"presetGroup\"><div class=\"presetGroup__title\">${escapeHtml(cat)}</div><div class=\"presetList\">${buttons}</div></div>`;
+    }).join('');
+}
+
+function buildCuratedPresets() {
+    return [
+        { category: 'The Geometric Architects', name: 'The Cardioid', description: 'LLRR (4 colors) — symmetry-focused growth.', preset: { version: 2, grid: { x: 130, y: 130, z: 130 }, sim: { running: true, stepsPerFrame: 4 }, ants: [{ name: 'Cardioid', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'LLRR', baseHue: 140, spawnAtTick: 0 }] } },
+        { category: 'The Geometric Architects', name: 'The Square', description: 'LRRRRRLLR (9 colors) — dense square growth.', preset: { version: 2, grid: { x: 140, y: 140, z: 140 }, sim: { running: true, stepsPerFrame: 5 }, ants: [{ name: 'Square', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'LRRRRRLLR', baseHue: 210, spawnAtTick: 0 }] } },
+        { category: 'The Geometric Architects', name: 'The Triangle', description: 'RRLLLRLLLRRR (12 colors) — wedge; later migrates.', preset: { version: 2, grid: { x: 160, y: 160, z: 160 }, sim: { running: true, stepsPerFrame: 6 }, ants: [{ name: 'Triangle', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RRLLLRLLLRRR', baseHue: 35, spawnAtTick: 0 }] } },
+        { category: 'The Geometric Architects', name: 'The Spiral', description: 'LRRRRLLLRRR (11 colors) — architectural square spiral.', preset: { version: 2, grid: { x: 150, y: 150, z: 150 }, sim: { running: true, stepsPerFrame: 5 }, ants: [{ name: 'Spiral', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'LRRRRLLLRRR', baseHue: 280, spawnAtTick: 0 }] } },
+        { category: 'The Highwaymen', name: 'Classic Highway', description: 'RL (2 colors) — chaos then highway.', preset: { version: 2, grid: { x: 140, y: 140, z: 140 }, sim: { running: true, stepsPerFrame: 4 }, ants: [{ name: 'Classic', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 150, spawnAtTick: 0 }] } },
+        { category: 'The Highwaymen', name: 'Convolution', description: 'LLRRRLRLRLLR (12 colors) — thick braided highway.', preset: { version: 2, grid: { x: 160, y: 160, z: 160 }, sim: { running: true, stepsPerFrame: 6 }, ants: [{ name: 'Convolution', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'LLRRRLRLRLLR', baseHue: 190, spawnAtTick: 0 }] } },
+        { category: 'The Highwaymen', name: 'The Weaver', description: 'RLR (3 colors) — chaotic fuzzball growth.', preset: { version: 2, grid: { x: 140, y: 140, z: 140 }, sim: { running: true, stepsPerFrame: 7 }, ants: [{ name: 'Weaver', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RLR', baseHue: 320, spawnAtTick: 0 }] } },
+        { category: 'Multi-Ant Orchestrations', name: 'The Rorschach', description: 'RL (2 colors) — mirrored pair symmetry.', preset: { version: 2, grid: { x: 140, y: 140, z: 140 }, sim: { running: true, stepsPerFrame: 4 }, ants: [{ name: 'Ant 1', x: -1, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 140, spawnAtTick: 0 }, { name: 'Ant 2', x: 1, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 40, spawnAtTick: 0 }] } },
+        { category: 'Multi-Ant Orchestrations', name: 'The Collider', description: 'RL — second ant intercepts highway.', preset: { version: 2, grid: { x: 200, y: 200, z: 200 }, sim: { running: true, stepsPerFrame: 4 }, ants: [{ name: 'Chaos Maker', x: 0, y: 0, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 130, spawnAtTick: 0 }, { name: 'Sniper', x: 30, y: 30, z: 0, orientation: 5, heading: 'west', rule: 'RL', baseHue: 10, spawnAtTick: 0 }] } },
+        { category: 'Multi-Ant Orchestrations', name: 'The Galaxy', description: 'RL — four-way rotational symmetry.', preset: { version: 2, grid: { x: 200, y: 200, z: 200 }, sim: { running: true, stepsPerFrame: 3 }, ants: [{ name: 'Ant 1', x: 0, y: 10, z: 0, orientation: 5, heading: 'south', rule: 'RL', baseHue: 210, spawnAtTick: 0 }, { name: 'Ant 2', x: 0, y: -10, z: 0, orientation: 5, heading: 'north', rule: 'RL', baseHue: 30, spawnAtTick: 0 }, { name: 'Ant 3', x: 10, y: 0, z: 0, orientation: 5, heading: 'west', rule: 'RL', baseHue: 120, spawnAtTick: 0 }, { name: 'Ant 4', x: -10, y: 0, z: 0, orientation: 5, heading: 'east', rule: 'RL', baseHue: 300, spawnAtTick: 0 }] } }
+    ];
+}
+
 async function captureSceneSnapshotFile(filename) {
     var sceneEl = document.getElementById('mainFrame');
-    if (!sceneEl || !sceneEl.renderer || !sceneEl.renderer.domElement) return null;
+    if (!sceneEl) return null;
+
+    if (!sceneEl.hasLoaded) {
+        await new Promise((resolve) => sceneEl.addEventListener('loaded', resolve, { once: true }));
+    }
+
+    if (!sceneEl.renderer || !sceneEl.renderer.domElement) {
+        await delay(60);
+    }
+    if (!sceneEl.renderer || !sceneEl.renderer.domElement) return null;
+
+    try {
+        if (sceneEl.camera && sceneEl.object3D) {
+            sceneEl.renderer.render(sceneEl.object3D, sceneEl.camera);
+        }
+    } catch (err) {}
     var canvas = sceneEl.renderer.domElement;
 
     var blob = await new Promise((resolve) => {
@@ -942,7 +1319,15 @@ async function captureSceneSnapshotFile(filename) {
             resolve(null);
         }
     });
-    if (!blob) return null;
+    if (!blob) {
+        try {
+            var dataUrl = canvas.toDataURL('image/png');
+            var res = await fetch(dataUrl);
+            blob = await res.blob();
+        } catch (err) {
+            return null;
+        }
+    }
 
     try {
         return new File([blob], filename, { type: 'image/png' });

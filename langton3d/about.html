@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="About Langton 3D — a 3D Langton's Ant / Turmite playground with palettes, presets, and shareable URLs.">
+    <meta name="theme-color" content="#0a0c10">
+    <meta name="robots" content="index,follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Langton 3D — About">
+    <meta property="og:description" content="Controls, sharing, and the color/state model used by Langton 3D.">
+    <meta property="og:site_name" content="Langton 3D">
+    <meta property="og:image" content="/langton3d/og.png">
+
+    <link rel="icon" href="/langton3d/favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/langton3d/site.webmanifest">
+    <link rel="stylesheet" href="./about.css">
+
+    <title>Langton 3D — About</title>
+</head>
+
+<body>
+    <main class="page">
+        <header class="top">
+            <div class="brand">
+                <div class="brand__title">Langton 3D</div>
+                <div class="brand__sub">A 3D Langton’s Ant / Turmite playground</div>
+            </div>
+            <nav class="nav">
+                <a class="btn" href="./kaaro.html">Open Simulator</a>
+                <a class="btn" href="https://github.com/karx/kCanvas/tree/master/langton3d" target="_blank" rel="noopener noreferrer">Source</a>
+            </nav>
+        </header>
+
+        <section class="card">
+            <h2>What this is</h2>
+            <p>
+                This experiment renders an infinite-looking voxel trail in A-Frame while one or more ants (turmites) walk
+                a shared grid. You can spawn ants, choose palettes, schedule spawns, and share the whole setup via a URL.
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>Controls</h2>
+            <ul>
+                <li>Move camera: WASD/Arrows + mouse look</li>
+                <li>Pause/Play: Space</li>
+                <li>Single step: N</li>
+                <li>Reset: R</li>
+                <li>Help: H or ?</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>Sharing</h2>
+            <ul>
+                <li><b>Share</b> copies a preset URL to your clipboard.</li>
+                <li><b>Share/Import</b> opens a drawer panel with the URL field, import, and presets.</li>
+                <li><b>Snapshot</b> downloads/shares an image and also copies the preset URL.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>State + color model (multi-ant)</h2>
+            <p>
+                Each cell stores a shared numeric <code>stateIndex</code> (drives behavior) and a hex <code>color</code> (visual only).
+                Ants interact through <code>stateIndex</code>. Each ant’s palette controls only the colors it paints.
+            </p>
+        </section>
+
+        <footer class="footer">
+            <div>Made in the <a href="./kaaro.html">simulator</a> • Share a preset with friends via URL</div>
+        </footer>
+    </main>
+</body>
+
+</html>

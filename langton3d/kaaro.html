@@ -7,12 +7,12 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="description" content="Langton's Ant / Turmites in 3D with live ant management, palettes, and shareable presets.">
     <meta name="theme-color" content="#0a0c10">
-
-    <link rel="canonical" href="https://karx.github.io/kCanvas/langton3d/kaaro.html">
+    <meta name="robots" content="index,follow">
 
     <meta property="og:type" content="website">
     <meta property="og:title" content="Langton 3D">
     <meta property="og:description" content="3D Langton's Ant / Turmites with live management drawer, palettes, and shareable presets.">
+    <meta property="og:site_name" content="Langton 3D">
     <meta property="og:image" content="/langton3d/og.png">
     <meta property="og:image:alt" content="Langton 3D preview image">
 
@@ -21,34 +21,43 @@
     <meta name="twitter:description" content="3D Langton's Ant / Turmites with live management drawer, palettes, and shareable presets.">
     <meta name="twitter:image" content="/langton3d/og.png">
 
+    <link rel="icon" href="/langton3d/favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/langton3d/site.webmanifest">
+
     <script src="https://aframe.io/releases/0.9.1/aframe.min.js"></script>
-     
+
     <link rel="stylesheet" href="./kaaro.css">
-    <title>kCanvas - 3D Langoton's Ant</title>
+    <title>Langton 3D — Ants, Palettes, Presets</title>
 </head>
 
 <body>
-    <a-scene id="mainFrame" background="color: black" renderer="preserveDrawingBuffer: true">
+    <a-scene id="mainFrame" background="color: black" renderer="antialias: true; alpha: true; preserveDrawingBuffer: true">
         <a-entity light="type: ambient; color: #EEE"></a-entity>
         <a-entity light="type: point; color: #FFF; intensity: 0.4" position="-1 -10 -2"></a-entity>
-            
-            <a-entity id="rig" position="0 0 20">
-                <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true adAxis:y"></a-entity>
-            </a-entity>
+
+        <a-entity id="rig" position="0 0 20">
+            <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true adAxis:y"></a-entity>
+        </a-entity>
     </a-scene>
 
     <div class="hud" id="hud">
         <div class="hud__bar">
             <div class="hud__title">
-                <div class="hud__name">Langton 3D</div>
-                <div class="hud__hint">WASD/Arrows + mouse to move • Space pause • N step • R reset</div>
+                <div class="hud__nameRow">
+                    <div class="hud__name">Langton 3D</div>
+                    <a class="hud__link" href="./about.html">About</a>
+                </div>
+                <div class="hud__hint">WASD/Arrows + mouse to move • Space pause • N step • R reset • H help</div>
             </div>
             <div class="hud__controls">
                 <button class="hud__btn" id="btn-toggle" type="button">Pause</button>
                 <button class="hud__btn" id="btn-step" type="button">Step</button>
                 <button class="hud__btn hud__btn--danger" id="btn-reset" type="button">Reset</button>
                 <button class="hud__btn" id="btn-share" type="button" title="Copy a shareable URL preset">Share</button>
+                <button class="hud__btn" id="btn-sharepanel" type="button" title="Open Share/Import panel">Share/Import</button>
                 <button class="hud__btn" id="btn-snapshot" type="button" title="Share/download a snapshot image (includes preset URL)">Snapshot</button>
+                <button class="hud__btn" id="btn-fullscreen" type="button" title="Toggle fullscreen">Fullscreen</button>
+                <button class="hud__btn" id="btn-help" type="button" title="Help and controls">Help</button>
                 <label class="hud__label" title="Simulation steps per frame">
                     Speed
                     <input id="speed" type="range" min="1" max="30" value="1" />
@@ -65,6 +74,26 @@
             </div>
 
             <div class="drawer__content">
+                <div class="sharePanel" id="sharePanel" aria-hidden="true">
+                    <div class="panel">
+                        <div class="panel__title">Share</div>
+                        <div class="panel__row">
+                            <input class="panel__input" id="shareUrl" type="text" readonly value="" />
+                            <button class="hud__btn" id="btn-copy-share" type="button">Copy</button>
+                        </div>
+                        <div class="panel__row">
+                            <input class="panel__input" id="loadPreset" type="text" placeholder="Paste a shared URL or ?p=..." />
+                            <button class="hud__btn" id="btn-load-preset" type="button">Load</button>
+                        </div>
+                        <div class="panel__hint">Copy/share the URL. Paste a URL/preset to load without reloading the page.</div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel__title">Presets</div>
+                        <div id="presetList"></div>
+                    </div>
+                </div>
+
                 <div class="antList" id="antList"></div>
 
                 <form class="spawn" id="spawnForm" autocomplete="off">
@@ -101,7 +130,7 @@
                         <label class="spawn__label">
                             Colors (hex, matches rule length)
                             <input class="spawn__input" id="spawnColors" type="text" value="#12130f #5b9279 #eae6e5 #8fcb9b" />
-                            <div class="spawn__help">If a cell color isn't in this palette, this ant treats it as state 0.</div>
+                            <div class="spawn__help">Palette controls display colors this ant paints; behavior uses shared cell state.</div>
                         </label>
                     </div>
                     <div class="spawn__row">
@@ -109,7 +138,7 @@
                             Rule (space/comma separated)
                             <input class="spawn__input" id="spawnRule" type="text" value="L R R L" />
                         </label>
-                        <div class="spawn__help">Example: <code>L R</code> or <code>L R R L</code> (states = token count)</div>
+                        <div class="spawn__help">Example: <code>L R</code> or <code>LLRR</code> (states = token count)</div>
                     </div>
                     <div class="spawn__row spawn__row--actions">
                         <button class="hud__btn" id="btn-spawn" type="submit">Spawn</button>
@@ -119,8 +148,47 @@
             </div>
         </aside>
     </div>
-    
-    <script  src="./kaaro.js"></script>
+
+    <div class="modal" id="helpModal" aria-hidden="true">
+        <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <div class="modal__header">
+                <div class="modal__title" id="helpTitle">Help</div>
+                <button class="hud__btn" id="btn-close-help" type="button">Close</button>
+            </div>
+            <div class="modal__body">
+                <div class="modal__section">
+                    <div class="modal__sectionTitle">Controls</div>
+                    <ul class="modal__list">
+                        <li>Move: WASD/Arrows + mouse look</li>
+                        <li>Pause/Play: Space</li>
+                        <li>Single step: N</li>
+                        <li>Reset: R</li>
+                        <li>Help: H or ?</li>
+                    </ul>
+                </div>
+                <div class="modal__section">
+                    <div class="modal__sectionTitle">Colors / State Mapping</div>
+                    <div class="modal__text">
+                        Cells store a shared numeric state index (for behavior) and a hex color (for display).
+                        Ants interact via the shared state index; each ant's palette only controls the colors it paints.
+                    </div>
+                </div>
+                <div class="modal__section">
+                    <div class="modal__sectionTitle">Sharing</div>
+                    <div class="modal__text">
+                        Use Share to copy a URL that encodes the current setup. Use Share/Import to browse presets and import links.
+                        Snapshot downloads/shares an image and also copies the URL.
+                    </div>
+                </div>
+                <label class="modal__checkbox">
+                    <input type="checkbox" id="helpDontShow" />
+                    Don't show on startup
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script src="./kaaro.js"></script>
 </body>
 
 </html>
