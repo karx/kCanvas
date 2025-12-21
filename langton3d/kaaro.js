@@ -482,7 +482,11 @@ function setupHud() {
     });
 
     toggleSpawnEl.addEventListener('click', () => {
-        spawnFormEl.classList.toggle('is-open');
+        var isOpen = spawnFormEl.classList.toggle('is-open');
+        if (isOpen) {
+            var nameInput = document.getElementById('spawnName');
+            if (nameInput) nameInput.focus();
+        }
     });
 
     function syncFullscreenUi() {
@@ -630,6 +634,7 @@ function setupHud() {
             if (colorsResetEl) colorsResetEl.value = '#12130f #5b9279 #eae6e5 #8fcb9b';
             spawnFormEl.classList.remove('is-open');
             renderHud(true);
+            if (toggleSpawnEl) toggleSpawnEl.focus();
         } catch (err) {
             spawnErrorEl.textContent = err && err.message ? err.message : 'Failed to spawn ant';
         }
