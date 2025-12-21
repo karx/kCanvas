@@ -442,6 +442,16 @@ body {
     border-color: rgba(160, 196, 255, 0.55);
 }
 
+.hud__btn:focus-visible,
+.presetBtn:focus-visible,
+.hud__link:focus-visible,
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+    outline: 2px solid rgba(160, 196, 255, 0.8);
+    outline-offset: 2px;
+}
+
 .spawn__help {
     font-size: 12px;
     opacity: 0.8;
