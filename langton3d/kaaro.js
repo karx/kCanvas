@@ -482,7 +482,13 @@ function setupHud() {
     });
 
     toggleSpawnEl.addEventListener('click', () => {
-        spawnFormEl.classList.toggle('is-open');
+        var isOpen = spawnFormEl.classList.toggle('is-open');
+        if (isOpen) {
+            setTimeout(() => {
+                var nameInput = document.getElementById('spawnName');
+                if (nameInput) nameInput.focus();
+            }, 50);
+        }
     });
 
     function syncFullscreenUi() {
