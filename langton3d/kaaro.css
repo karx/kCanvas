@@ -501,3 +501,51 @@ body {
     font-size: 13px;
     opacity: 0.95;
 }
+
+.loadingOverlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 12, 16, 0.62);
+    backdrop-filter: blur(8px);
+    z-index: 50;
+    pointer-events: auto;
+}
+
+.loadingOverlay.is-open {
+    display: flex;
+}
+
+.loadingOverlay__card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(10, 12, 16, 0.78);
+    color: #e9eef6;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    max-width: min(92vw, 520px);
+}
+
+.loadingOverlay__text {
+    font-size: 13px;
+    font-weight: 650;
+    letter-spacing: 0.2px;
+}
+
+.loadingSpinner {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.24);
+    border-top-color: rgba(255, 255, 255, 0.86);
+    animation: langton3d_spin 0.9s linear infinite;
+}
+
+@keyframes langton3d_spin {
+    to { transform: rotate(360deg); }
+}

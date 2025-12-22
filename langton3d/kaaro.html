@@ -53,7 +53,6 @@
                 <button class="hud__btn" id="btn-toggle" type="button">Pause</button>
                 <button class="hud__btn" id="btn-step" type="button">Step</button>
                 <button class="hud__btn hud__btn--danger" id="btn-reset" type="button">Reset</button>
-                <button class="hud__btn" id="btn-share" type="button" title="Copy a shareable URL preset">Share</button>
                 <button class="hud__btn" id="btn-sharepanel" type="button" title="Open Share/Import panel">Share/Import</button>
                 <button class="hud__btn" id="btn-snapshot" type="button" title="Share/download a snapshot image (includes preset URL)">Snapshot</button>
                 <button class="hud__btn" id="btn-fullscreen" type="button" title="Toggle fullscreen">Fullscreen</button>
@@ -185,6 +184,13 @@
                     Don't show on startup
                 </label>
             </div>
+        </div>
+    </div>
+
+    <div class="loadingOverlay" id="loadingOverlay" aria-hidden="true">
+        <div class="loadingOverlay__card" role="status" aria-live="polite">
+            <div class="loadingSpinner" aria-hidden="true"></div>
+            <div class="loadingOverlay__text" id="loadingText">Loading…</div>
         </div>
     </div>
 

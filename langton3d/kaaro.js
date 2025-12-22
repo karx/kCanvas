@@ -25,11 +25,18 @@ class LangtonAntGrid {
     constructor() {
         this.numberOfStates = 4;
         this.stateTransitions = ['L', 'L','R', 'R']; //default value
+        this._cells = new Map();
     }
     
     init(x = 20, y =20, z= 20) {
-        // console.log('init Begun');
-        grid = [];
+        x = Number(x);
+        y = Number(y);
+        z = Number(z);
+        if (!Number.isFinite(x) || x < 1) x = 20;
+        if (!Number.isFinite(y) || y < 1) y = 20;
+        if (!Number.isFinite(z) || z < 1) z = 20;
+        this._cells = new Map();
+        grid = this._cells; // legacy global for debugging
         this.max_x = x;
         this.max_y = y;
         this.max_z = z;
@@ -41,46 +48,64 @@ class LangtonAntGrid {
             heading: 0,
             orientation: 5
         });
-        for (let i=-x; i<x; i++) {
-            grid[i] = [];
-            for (let j=-y; j<y; j++) {
-                grid[i][j] = [];
-                for (let k=-z;k<z;k++) {
-                    grid[i][j][k] = Object.assign({}, {
-                        color: null,
-                        stateIndex: 0,
-                        ownerId: null
-                    });
-                }
-            }
-        }
-        // console.log('init End');
-        // console.log(grid);
-
-
     }
     updateGrid() {
         
     }
 
+    isInBounds(x, y, z) {
+        if (!Number.isFinite(Number(x)) || !Number.isFinite(Number(y)) || !Number.isFinite(Number(z))) return false;
+        return (x >= -this.max_x && x < this.max_x) &&
+            (y >= -this.max_y && y < this.max_y) &&
+            (z >= -this.max_z && z < this.max_z);
+    }
+
+    _ensureCell(x, y, z) {
+        if (!this.isInBounds(x, y, z)) return null;
+        var xMap = this._cells.get(x);
+        if (!xMap) {
+            xMap = new Map();
+            this._cells.set(x, xMap);
+        }
+        var yMap = xMap.get(y);
+        if (!yMap) {
+            yMap = new Map();
+            xMap.set(y, yMap);
+        }
+        var cell = yMap.get(z);
+        if (!cell) {
+            cell = {
+                color: null,
+                stateIndex: 0,
+                ownerId: null,
+                ent: null,
+                scale: 0.85
+            };
+            yMap.set(z, cell);
+        }
+        return cell;
+    }
+
     setCell(x, y, z, stateIndex, colorHex, ownerId) {
-        if (!grid?.[x]?.[y]?.[z]) return;
-        if (Number.isFinite(Number(stateIndex))) grid[x][y][z].stateIndex = Number(stateIndex);
-        if (typeof colorHex === 'string') grid[x][y][z].color = colorHex;
-        if (Number.isFinite(Number(ownerId))) grid[x][y][z].ownerId = Number(ownerId);
+        var cell = this._ensureCell(Number(x), Number(y), Number(z));
+        if (!cell) return;
+        if (Number.isFinite(Number(stateIndex))) cell.stateIndex = Number(stateIndex);
+        if (typeof colorHex === 'string') cell.color = colorHex;
+        if (Number.isFinite(Number(ownerId))) cell.ownerId = Number(ownerId);
     }
 
     getCell(x, y, z) {
-        return grid?.[x]?.[y]?.[z] || null;
+        return this._ensureCell(Number(x), Number(y), Number(z));
     }
 
     // Back-compat helpers (not used by the sim anymore)
     colorUpdate(x, y, z, colorHex) {
-        this.setCell(x, y, z, grid?.[x]?.[y]?.[z]?.stateIndex ?? 0, colorHex, grid?.[x]?.[y]?.[z]?.ownerId ?? null);
+        var cell = this.getCell(x, y, z);
+        this.setCell(x, y, z, cell?.stateIndex ?? 0, colorHex, cell?.ownerId ?? null);
     }
 
     getColorOfGrid(x, y, z) {
-        return grid?.[x]?.[y]?.[z]?.color ?? null;
+        return this.getCell(x, y, z)?.color ?? null;
     }
 
     getLog() {
@@ -145,7 +170,7 @@ class LangtonTermite {
         const currentStatus = Object.assign({}, this.currentPosition);
         if (!this.active) return;
 
-        if (!grid[this.currentPosition.x] || !grid[this.currentPosition.x][this.currentPosition.y] || !grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z]) {
+        if (!antGrid.isInBounds(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z)) {
             this.isOutOfBounds = true;
             this.lastError = 'Out of bounds';
             return;
@@ -214,7 +239,7 @@ class LangtonTermite {
             z: this.currentPosition.z - beforeMove.z
         };
         // console.log(this.currentPosition.x);
-        if (!grid[this.currentPosition.x] || !grid[this.currentPosition.x][this.currentPosition.y] || !grid[this.currentPosition.x][this.currentPosition.y][this.currentPosition.z]) {
+        if (!antGrid.isInBounds(this.currentPosition.x, this.currentPosition.y, this.currentPosition.z)) {
             this.isOutOfBounds = true;
             this.lastError = 'Out of bounds';
             this._pushRecentStep({
@@ -335,14 +360,15 @@ function draw() {
 }
 
 function drawBox(position) {
-    if (!grid[position.x] || !grid[position.x][position.y] || !grid[position.x][position.y][position.z])
-        return;
-    var cellColor = grid[position.x][position.y][position.z].color || colorsToBeUsed[0];
-    if (grid[position.x][position.y][position.z].ent)
+    if (!antGrid.isInBounds(position.x, position.y, position.z)) return;
+    var cell = antGrid.getCell(position.x, position.y, position.z);
+    if (!cell) return;
+    var cellColor = cell.color || colorsToBeUsed[0];
+    if (cell.ent)
     {
-        var oldBox = grid[position.x][position.y][position.z].ent;
-        var scale = grid[position.x][position.y][position.z].scale * 0.85;
-        grid[position.x][position.y][position.z].scale = scale;
+        var oldBox = cell.ent;
+        var scale = (Number(cell.scale) || 0.85) * 0.85;
+        cell.scale = scale;
 
         // document.getElementById(`kLang-3d-${position.x}-${position.y}-${position.z}`);
         
@@ -357,8 +383,8 @@ function drawBox(position) {
         newBox.setAttribute('scale', `${1-scale} ${1-scale} ${1-scale}`);
         newBox.setAttribute('color', cellColor);
         newBox.setAttribute('id',`kLang-3d-${position.x}-${position.y}-${position.z}`);
-        grid[position.x][position.y][position.z].scale = scale;
-        grid[position.x][position.y][position.z].ent = newBox;
+        cell.scale = scale;
+        cell.ent = newBox;
         var frame = document.getElementById('mainFrame');
         if (frame) {
             frame.appendChild(newBox);
@@ -433,7 +459,6 @@ function setupHud() {
     var spawnFormEl = document.getElementById('spawnForm');
     var spawnErrorEl = document.getElementById('spawnError');
     var toggleSpawnEl = document.getElementById('btn-toggle-spawn');
-    var shareEl = document.getElementById('btn-share');
     var snapshotEl = document.getElementById('btn-snapshot');
     var fullscreenEl = document.getElementById('btn-fullscreen');
     var colorsEl = document.getElementById('spawnColors');
@@ -454,7 +479,7 @@ function setupHud() {
     var helpDontShowEl = document.getElementById('helpDontShow');
 
     // Core UI required
-    if (!speedEl || !toggleEl || !stepEl || !resetEl || !antListEl || !antCountEl || !simStatusEl || !spawnFormEl || !spawnErrorEl || !toggleSpawnEl || !shareEl || !snapshotEl || !colorsEl) {
+    if (!speedEl || !toggleEl || !stepEl || !resetEl || !antListEl || !antCountEl || !simStatusEl || !spawnFormEl || !spawnErrorEl || !toggleSpawnEl || !snapshotEl || !colorsEl) {
         return;
     }
 
@@ -486,22 +511,6 @@ function setupHud() {
 
     toggleSpawnEl.addEventListener('click', () => {
         spawnFormEl.classList.toggle('is-open');
-    });
-
-    shareEl.addEventListener('click', async () => {
-        var url = buildShareUrl();
-        var didEnter = await maybeEnterFullscreenForShare();
-        var ok = await copyTextToClipboard(url);
-        if (ok) {
-            shareEl.textContent = 'Copied';
-            setTimeout(() => { shareEl.textContent = 'Share'; }, 900);
-            if (shareUrlEl) shareUrlEl.value = url;
-        } else {
-            shareEl.textContent = 'Copy failed';
-            setTimeout(() => { shareEl.textContent = 'Share'; }, 1200);
-            console.warn('Share URL copy failed:', url);
-        }
-        await maybeExitFullscreenAfterShare(didEnter);
     });
 
     snapshotEl.addEventListener('click', async () => {
@@ -539,20 +548,21 @@ function setupHud() {
 
     function syncFullscreenUi() {
         if (!fullscreenEl) return;
-        fullscreenEl.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+        fullscreenEl.textContent = getFullscreenElement() ? 'Exit Fullscreen' : 'Fullscreen';
     }
 
     if (fullscreenEl) {
         fullscreenEl.addEventListener('click', async () => {
             try {
-                if (document.fullscreenElement) await document.exitFullscreen();
-                else await document.documentElement.requestFullscreen();
+                if (getFullscreenElement()) await exitFullscreen();
+                else await requestFullscreenForScene();
             } catch (err) {
                 console.warn('Fullscreen toggle failed', err);
             } finally {
                 syncFullscreenUi();
             }
         });
+        document.addEventListener('fullscreenchange', syncFullscreenUi);
         syncFullscreenUi();
     }
 
@@ -589,11 +599,11 @@ function setupHud() {
     }
 
     if (loadPresetBtnEl && loadPresetEl) {
-        loadPresetBtnEl.addEventListener('click', () => {
+        loadPresetBtnEl.addEventListener('click', async () => {
             var raw = (loadPresetEl.value || '').trim();
             if (!raw) return;
             try {
-                applyPresetFromInput(raw);
+                await applyPresetFromInput(raw);
                 loadPresetEl.value = '';
                 toggleSharePanel(true);
                 if (shareUrlEl) shareUrlEl.value = buildShareUrl();
@@ -612,12 +622,16 @@ function setupHud() {
     if (presetListEl) {
         var presets = buildCuratedPresets();
         presetListEl.innerHTML = renderPresetGalleryHtml(presets);
-        presetListEl.addEventListener('click', (event) => {
+        presetListEl.addEventListener('click', async (event) => {
             var idx = Number(event.target?.getAttribute?.('data-preset-idx'));
             if (!Number.isFinite(idx)) return;
             var p = presets[idx];
             if (!p) return;
-            applyPresetObject(p.preset);
+            try {
+                await applyPresetObject(p.preset);
+            } catch (err) {
+                console.warn('Preset apply failed', err);
+            }
             toggleSharePanel(true);
             if (shareUrlEl) shareUrlEl.value = buildShareUrl();
         });
@@ -987,7 +1001,7 @@ function escapeHtml(input) {
         .replace(/'/g, '&#39;');
 }
 
-function loadPresetFromUrl() {
+async function loadPresetFromUrl() {
     try {
         console.groupCollapsed('[langton3d] Preset: load from URL');
         var params = new URLSearchParams(window.location.search || '');
@@ -1009,50 +1023,7 @@ function loadPresetFromUrl() {
             return false;
         }
 
-        var gridCfg = preset.grid || {};
-        var gx = Number(gridCfg.x || 100);
-        var gy = Number(gridCfg.y || 100);
-        var gz = Number(gridCfg.z || 100);
-        antGrid.init(gx, gy, gz);
-        console.log('Grid init:', { x: gx, y: gy, z: gz });
-
-        var simCfg = preset.sim || {};
-        if (typeof simCfg.running === 'boolean') sim.running = simCfg.running;
-        if (Number.isFinite(Number(simCfg.stepsPerFrame))) sim.stepsPerFrame = Math.max(1, Math.min(30, Number(simCfg.stepsPerFrame)));
-        console.log('Sim config:', { running: sim.running, stepsPerFrame: sim.stepsPerFrame });
-
-        allTermites = [];
-        nextAntId = 1;
-        sim.spawnQueue = [];
-        sim.totalTicks = 0;
-        sim.pendingSingleSteps = 0;
-
-        var ants = Array.isArray(preset.ants) ? preset.ants : [];
-        console.log('Ants in preset:', ants.length);
-        ants.forEach((a, idx) => {
-            var colors = a.colors;
-            if ((!Array.isArray(colors) || colors.length === 0) && Number.isFinite(Number(a.baseHue))) {
-                colors = generatePaletteFromHue(Number(a.baseHue), parseRuleString(a.rule || '').length || 2);
-            }
-
-            try {
-                spawnAnt({
-                    name: a.name || '',
-                    x: a.x,
-                    y: a.y,
-                    z: a.z,
-                    orientation: a.orientation,
-                    heading: a.heading,
-                    rule: a.rule,
-                    colors: Array.isArray(colors) ? colors.join(' ') : '',
-                    spawnAtTick: a.spawnAtTick || 0
-                });
-            } catch (err) {
-                console.warn(`Failed to add ant[${idx}] from preset`, a, err);
-            }
-        });
-
-        console.log('Loaded ants:', allTermites.length, 'queued:', sim.spawnQueue.length);
+        await applyPresetObject(preset);
         console.groupEnd();
 
         return true;
@@ -1148,8 +1119,8 @@ async function copyTextToClipboard(text) {
 
 async function maybeEnterFullscreenForShare() {
     try {
-        if (document.fullscreenElement) return false;
-        await document.documentElement.requestFullscreen();
+        if (getFullscreenElement()) return false;
+        await requestFullscreenForScene();
         return true;
     } catch (err) {
         return false;
@@ -1159,13 +1130,93 @@ async function maybeEnterFullscreenForShare() {
 async function maybeExitFullscreenAfterShare(didEnter) {
     try {
         if (!didEnter) return;
-        if (!document.fullscreenElement) return;
-        await document.exitFullscreen();
+        if (!getFullscreenElement()) return;
+        await exitFullscreen();
     } catch (err) {}
 }
 
 function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function nextFrame() {
+    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+var loadingUi = {
+    depth: 0
+};
+
+function showLoading(text) {
+    loadingUi.depth += 1;
+    var overlayEl = document.getElementById('loadingOverlay');
+    if (!overlayEl) return;
+    overlayEl.classList.add('is-open');
+    overlayEl.setAttribute('aria-hidden', 'false');
+    setLoadingText(text);
+}
+
+function hideLoading() {
+    loadingUi.depth = Math.max(0, loadingUi.depth - 1);
+    if (loadingUi.depth > 0) return;
+    var overlayEl = document.getElementById('loadingOverlay');
+    if (!overlayEl) return;
+    overlayEl.classList.remove('is-open');
+    overlayEl.setAttribute('aria-hidden', 'true');
+}
+
+function setLoadingText(text) {
+    var el = document.getElementById('loadingText');
+    if (!el) return;
+    el.textContent = text ? String(text) : 'Loading…';
+}
+
+async function withLoading(text, fn) {
+    showLoading(text);
+    await nextFrame();
+    try {
+        return await fn();
+    } finally {
+        hideLoading();
+    }
+}
+
+function getFullscreenElement() {
+    try {
+        if (window.AFRAME?.utils?.fullscreen?.getFullscreenElement) return AFRAME.utils.fullscreen.getFullscreenElement();
+    } catch (err) {}
+    return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement || null;
+}
+
+async function requestFullscreen(element) {
+    try {
+        if (window.AFRAME?.utils?.fullscreen?.requestFullscreen) return await Promise.resolve(AFRAME.utils.fullscreen.requestFullscreen(element));
+    } catch (err) {}
+    var el = element || document.documentElement;
+    if (el.requestFullscreen) return await el.requestFullscreen();
+    if (el.webkitRequestFullscreen) return await el.webkitRequestFullscreen();
+    if (el.mozRequestFullScreen) return await el.mozRequestFullScreen();
+    if (el.msRequestFullscreen) return await el.msRequestFullscreen();
+}
+
+async function exitFullscreen() {
+    try {
+        if (window.AFRAME?.utils?.fullscreen?.exitFullscreen) return await Promise.resolve(AFRAME.utils.fullscreen.exitFullscreen());
+    } catch (err) {}
+    if (document.exitFullscreen) return await document.exitFullscreen();
+    if (document.webkitExitFullscreen) return await document.webkitExitFullscreen();
+    if (document.mozCancelFullScreen) return await document.mozCancelFullScreen();
+    if (document.msExitFullscreen) return await document.msExitFullscreen();
+}
+
+async function requestFullscreenForScene() {
+    var sceneEl = document.getElementById('mainFrame');
+    if (sceneEl && !sceneEl.hasLoaded) {
+        await new Promise((resolve) => sceneEl.addEventListener('loaded', resolve, { once: true }));
+    }
+    var target = sceneEl?.canvas || sceneEl?.renderer?.domElement || sceneEl || document.documentElement;
+    await requestFullscreen(target);
+    try { sceneEl?.resize?.(); } catch (err) {}
 }
 
 function normalizeHeading(heading) {
@@ -1192,7 +1243,7 @@ function normalizeHeading(heading) {
     }
 }
 
-function applyPresetFromInput(input) {
+async function applyPresetFromInput(input) {
     var raw = String(input).trim();
     var encoded = raw;
 
@@ -1211,48 +1262,69 @@ function applyPresetFromInput(input) {
     if (!encoded) throw new Error('No preset found in input');
     var json = base64UrlDecode(encoded);
     var preset = JSON.parse(json);
-    applyPresetObject(preset);
+    await applyPresetObject(preset);
 }
 
-function applyPresetObject(preset) {
+async function removeNodesInChunks(nodes, chunkSize) {
+    var list = Array.from(nodes || []);
+    var size = Number(chunkSize) || 300;
+    for (let i = 0; i < list.length; i += size) {
+        list.slice(i, i + size).forEach((node) => {
+            try { node.remove(); } catch (err) {}
+        });
+        await nextFrame();
+    }
+}
+
+async function applyPresetObject(preset) {
     if (!preset || (preset.version !== 1 && preset.version !== 2)) throw new Error('Unsupported preset');
 
-    document.querySelectorAll('[id^=\"kLang-3d-\"]').forEach((node) => node.remove());
+    await withLoading('Loading preset…', async () => {
+        setLoadingText('Clearing scene…');
+        await removeNodesInChunks(document.querySelectorAll('[id^=\"kLang-3d-\"]'), 350);
+        sim.stats.boxesCreated = 0;
 
-    var gridCfg = preset.grid || {};
-    antGrid.init(Number(gridCfg.x || 100), Number(gridCfg.y || 100), Number(gridCfg.z || 100));
+        setLoadingText('Initializing grid…');
+        await nextFrame();
+        var gridCfg = preset.grid || {};
+        antGrid.init(Number(gridCfg.x || 100), Number(gridCfg.y || 100), Number(gridCfg.z || 100));
 
-    sim.spawnQueue = [];
-    sim.totalTicks = 0;
-    sim.pendingSingleSteps = 0;
+        setLoadingText('Applying sim settings…');
+        sim.spawnQueue = [];
+        sim.totalTicks = 0;
+        sim.pendingSingleSteps = 0;
 
-    var simCfg = preset.sim || {};
-    if (typeof simCfg.running === 'boolean') sim.running = simCfg.running;
-    if (Number.isFinite(Number(simCfg.stepsPerFrame))) sim.stepsPerFrame = Math.max(1, Math.min(30, Number(simCfg.stepsPerFrame)));
+        var simCfg = preset.sim || {};
+        if (typeof simCfg.running === 'boolean') sim.running = simCfg.running;
+        if (Number.isFinite(Number(simCfg.stepsPerFrame))) sim.stepsPerFrame = Math.max(1, Math.min(30, Number(simCfg.stepsPerFrame)));
 
-    allTermites = [];
-    nextAntId = 1;
+        setLoadingText('Spawning ants…');
+        await nextFrame();
+        allTermites = [];
+        nextAntId = 1;
 
-    var ants = Array.isArray(preset.ants) ? preset.ants : [];
-    ants.forEach((a) => {
-        var colors = a.colors;
-        if ((!Array.isArray(colors) || colors.length === 0) && Number.isFinite(Number(a.baseHue))) {
-            colors = generatePaletteFromHue(Number(a.baseHue), parseRuleString(a.rule || '').length || 2);
-        }
-        spawnAnt({
-            name: a.name || '',
-            x: a.x,
-            y: a.y,
-            z: a.z,
-            orientation: a.orientation,
-            heading: a.heading,
-            rule: a.rule,
-            colors: Array.isArray(colors) ? colors.join(' ') : '',
-            spawnAtTick: a.spawnAtTick || 0
+        var ants = Array.isArray(preset.ants) ? preset.ants : [];
+        ants.forEach((a) => {
+            var colors = a.colors;
+            if ((!Array.isArray(colors) || colors.length === 0) && Number.isFinite(Number(a.baseHue))) {
+                colors = generatePaletteFromHue(Number(a.baseHue), parseRuleString(a.rule || '').length || 2);
+            }
+            spawnAnt({
+                name: a.name || '',
+                x: a.x,
+                y: a.y,
+                z: a.z,
+                orientation: a.orientation,
+                heading: a.heading,
+                rule: a.rule,
+                colors: Array.isArray(colors) ? colors.join(' ') : '',
+                spawnAtTick: a.spawnAtTick || 0
+            });
         });
-    });
 
-    try { history.replaceState({}, '', buildShareUrl()); } catch (err) {}
+        try { history.replaceState({}, '', buildShareUrl()); } catch (err) {}
+        try { renderHud(true); } catch (err) {}
+    });
 }
 
 function renderPresetGalleryHtml(presets) {
@@ -1349,6 +1421,8 @@ function downloadFile(fileOrBlob, filename) {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-loadPresetFromUrl();
-setupHud();
-draw();
+(async () => {
+    await loadPresetFromUrl();
+    setupHud();
+    draw();
+})();
