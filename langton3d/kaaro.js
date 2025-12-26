@@ -567,6 +567,10 @@ function setupHud() {
     });
 
     snapshotEl.addEventListener('click', async () => {
+        if (snapshotEl.disabled) return;
+        snapshotEl.disabled = true;
+        var originalText = snapshotEl.textContent; // Keep this if we want to support dynamic labels later, but rely on disabled to prevent race
+        snapshotEl.textContent = 'Snap...';
         var shareUrl = buildShareUrl();
         try {
             var didEnter = await maybeEnterFullscreenForShare();
@@ -580,20 +584,29 @@ function setupHud() {
                     files: [file]
                 });
                 await maybeExitFullscreenAfterShare(didEnter);
+                snapshotEl.textContent = originalText;
+                snapshotEl.disabled = false;
                 return;
             }
             if (file) {
                 downloadFile(file, 'langton3d.png');
                 await copyTextToClipboard(shareUrl);
                 snapshotEl.textContent = 'Downloaded';
-                setTimeout(() => { snapshotEl.textContent = 'Snapshot'; }, 900);
+                setTimeout(() => {
+                    snapshotEl.textContent = 'Snapshot';
+                    snapshotEl.disabled = false;
+                }, 900);
                 await maybeExitFullscreenAfterShare(didEnter);
                 return;
             }
             await maybeExitFullscreenAfterShare(didEnter);
+            snapshotEl.textContent = 'Snapshot';
+            snapshotEl.disabled = false;
             console.warn('Snapshot capture failed; preset URL:', shareUrl);
         } catch (err) {
             console.warn('Snapshot failed', err);
+            snapshotEl.textContent = 'Snapshot';
+            snapshotEl.disabled = false;
             await maybeExitFullscreenAfterShare(false);
             console.warn('Preset URL:', shareUrl);
         }
