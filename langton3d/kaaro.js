@@ -741,6 +741,7 @@ function maybeRenderHud(nowOverride) {
 
     antCountEl.textContent = `${allTermites.length}`;
     toggleEl.textContent = sim.running ? 'Pause' : 'Play';
+    toggleEl.title = sim.running ? 'Pause (Space)' : 'Play (Space)';
     speedValueEl.textContent = `${sim.stepsPerFrame}`;
 
     var liveCount = allTermites.filter(a => a.active).length;
