@@ -52,14 +52,40 @@
         <div class="palette-title">Token colors</div>
         <div id="colorGrid" class="color-grid"></div>
       </div>
+      <div class="ants">
+        <div class="ants-title">Ants</div>
+        <div id="antList" class="ant-list"></div>
+        <form id="antForm" class="ant-form">
+          <div class="ant-row">
+            <input id="antX" type="number" placeholder="x" value="0" />
+            <input id="antY" type="number" placeholder="y" value="0" />
+            <input id="antZ" type="number" placeholder="z" value="0" />
+          </div>
+          <div class="ant-row">
+            <input id="antRule" placeholder="rule (e.g. LR)" value="LR" />
+            <select id="antHeading">
+              <option value="north" selected>Heading north</option>
+              <option value="east">Heading east</option>
+              <option value="south">Heading south</option>
+              <option value="west">Heading west</option>
+            </select>
+            <select id="antColorMode">
+              <option value="primary" selected>Use primary colors</option>
+              <option value="auto">Auto colors</option>
+            </select>
+            <input id="antSpawnAt" type="number" min="0" placeholder="spawn +steps" />
+            <button id="addAntBtn" type="submit">Add ant</button>
+          </div>
+        </form>
+      </div>
       <div id="presetDescription" class="preset-desc"></div>
       <div class="stats">
         <span id="statusRenderer">Renderer: WebGL</span>
         <span id="statusSteps">Steps: 0</span>
         <span id="statusCells">Active cells: 0</span>
       </div>
-      <div class="legend">
-        <strong>Rule tokens:</strong> L, R, U, D, F, B
+        <div class="legend">
+        <strong>Rule tokens:</strong> L, R, N, U
       </div>
     </div>
     <canvas id="c"></canvas>

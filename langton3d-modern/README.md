@@ -12,10 +12,9 @@ Open `langton3d-modern/index.html` in a local server or a static host.
 
 ## Rule tokens
 Rules are strings made from these tokens:
-- `L` / `R`: yaw left or right around the local up axis.
-- `U` / `D`: pitch up or down around the local right axis.
-- `F`: keep heading.
-- `B`: turn back (180 degrees).
+- `L` / `R`: turn left or right.
+- `N`: no turn (go straight).
+- `U`: u-turn (180 degrees).
 
 Example rules:
 - `LR` (classic)
@@ -27,7 +26,11 @@ Example rules:
 - Steps per frame to speed up or slow down.
 - Follow ant to keep the camera centered.
 - Pause, Step, Reset.
+ - Ants panel lets you add ants, set heading, and schedule spawns.
 
 ## Notes
 - WebGPU is used automatically if available; otherwise it falls back to WebGL.
 - Colors are generated per rule length.
+
+## Multi-ant interaction model
+Each cell stores a shared `stateIndex`. Every ant reads that index and interprets it with its own rule length (`stateIndex % antRuleLength`). When an ant visits, it increments the cell state modulo its own rule length and overwrites the cell color using its own palette at that new state. This matches the original `langton3d` behavior where the last ant to visit defines the stored state index.

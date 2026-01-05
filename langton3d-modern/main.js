@@ -12,6 +12,15 @@ const speedInput = document.getElementById("speedInput");
 const cameraMode = document.getElementById("cameraMode");
 const colorGrid = document.getElementById("colorGrid");
 const presetDescription = document.getElementById("presetDescription");
+const antList = document.getElementById("antList");
+const antForm = document.getElementById("antForm");
+const antX = document.getElementById("antX");
+const antY = document.getElementById("antY");
+const antZ = document.getElementById("antZ");
+const antRule = document.getElementById("antRule");
+const antHeading = document.getElementById("antHeading");
+const antColorMode = document.getElementById("antColorMode");
+const antSpawnAt = document.getElementById("antSpawnAt");
 const toggleBtn = document.getElementById("toggleBtn");
 const stepBtn = document.getElementById("stepBtn");
 const resetBtn = document.getElementById("resetBtn");
@@ -102,10 +111,12 @@ const state = {
   palette: [],
   followMode: cameraMode.value,
   antConfigs: [],
+  scheduledConfigs: [],
+  spawnQueue: [],
 };
 
 function sanitizeRule(value) {
-  const tokens = value.toUpperCase().replace(/[^LRUDFB]/g, "");
+  const tokens = value.toUpperCase().replace(/[^LRNUFB]/g, "");
   return tokens.length ? tokens : "LR";
 }
 
@@ -182,6 +193,28 @@ function colorToHex(color) {
   return `#${color.getHexString()}`;
 }
 
+function basisFromHeading(heading) {
+  const up = new THREE.Vector3(0, 1, 0);
+  let dir = new THREE.Vector3(0, 0, -1);
+  switch (heading) {
+    case "south":
+      dir = new THREE.Vector3(0, 0, 1);
+      break;
+    case "east":
+      dir = new THREE.Vector3(1, 0, 0);
+      break;
+    case "west":
+      dir = new THREE.Vector3(-1, 0, 0);
+      break;
+    case "north":
+    default:
+      dir = new THREE.Vector3(0, 0, -1);
+      break;
+  }
+  const right = dir.clone().cross(up).normalize();
+  return { dir, up, right };
+}
+
 function rebuildColorInputs(customColors) {
   const colors = customColors && customColors.length
     ? customColors
@@ -233,7 +266,12 @@ function syncPrimaryAntFromUi() {
   if (ants[0]) {
     ants[0].rule = state.rule;
     ants[0].palette = state.palette.map((c) => c.clone());
+    const basis = basisFromHeading(primaryConfig.heading || "north");
+    ants[0].dir.copy(basis.dir);
+    ants[0].up.copy(basis.up);
+    ants[0].right.copy(basis.right);
   }
+  renderAntList();
 }
 
 
@@ -255,11 +293,14 @@ function buildAnt(config) {
     : buildPalette(rule.length).map((c) => colorToHex(c));
   const palette = colors.map((hex) => new THREE.Color(hex));
 
+  const heading = String(config?.heading || "north").toLowerCase();
+  const basis = basisFromHeading(heading);
+
   return {
     position,
-    dir: new THREE.Vector3(1, 0, 0),
-    up: new THREE.Vector3(0, 1, 0),
-    right: new THREE.Vector3(0, 0, 1),
+    dir: basis.dir,
+    up: basis.up,
+    right: basis.right,
     rule,
     palette,
     mesh,
@@ -269,6 +310,119 @@ function buildAnt(config) {
 function setAnts(configs) {
   antGroup.clear();
   ants = (configs || []).map((config) => buildAnt(config));
+}
+
+function buildSpawnQueue() {
+  state.spawnQueue = state.scheduledConfigs.map((item) => ({
+    at: state.stepCount + item.delay,
+    config: item.config,
+  }));
+}
+
+function flushSpawnQueue() {
+  if (state.spawnQueue.length === 0) {
+    return;
+  }
+  const ready = state.spawnQueue.filter((item) => item.at <= state.stepCount);
+  if (ready.length === 0) {
+    return;
+  }
+  state.spawnQueue = state.spawnQueue.filter((item) => item.at > state.stepCount);
+  ready.forEach((item) => {
+    state.antConfigs.push(item.config);
+    const ant = buildAnt(item.config);
+    ants.push(ant);
+  });
+  renderAntList();
+}
+
+function renderAntList() {
+  if (!antList) {
+    return;
+  }
+  antList.innerHTML = "";
+  state.antConfigs.forEach((antConfig, index) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ant-item";
+
+    const header = document.createElement("div");
+    header.className = "ant-item-header";
+    header.textContent = `Ant ${index + 1}`;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "ant-remove";
+    removeBtn.textContent = "Remove";
+    removeBtn.addEventListener("click", () => {
+      if (state.antConfigs.length <= 1) {
+        return;
+      }
+      state.antConfigs.splice(index, 1);
+      resetSimulation();
+      renderAntList();
+    });
+    header.appendChild(removeBtn);
+
+    const meta = document.createElement("div");
+    meta.className = "ant-item-meta";
+    const heading = antConfig.heading || "north";
+    meta.textContent = `pos (${antConfig.x}, ${antConfig.y}, ${antConfig.z}) • rule ${antConfig.rule} • ${heading}`;
+
+    const swatches = document.createElement("div");
+    swatches.className = "ant-swatches";
+    (antConfig.colors || []).forEach((hex) => {
+      const swatch = document.createElement("div");
+      swatch.className = "ant-swatch";
+      swatch.style.background = hex;
+      swatches.appendChild(swatch);
+    });
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(meta);
+    wrapper.appendChild(swatches);
+    antList.appendChild(wrapper);
+  });
+
+  if (state.scheduledConfigs.length > 0) {
+    state.scheduledConfigs.forEach((item, index) => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "ant-item";
+
+      const header = document.createElement("div");
+      header.className = "ant-item-header";
+      header.textContent = `Scheduled ${index + 1}`;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "ant-remove";
+      removeBtn.textContent = "Remove";
+      removeBtn.addEventListener("click", () => {
+        state.scheduledConfigs.splice(index, 1);
+        buildSpawnQueue();
+        renderAntList();
+      });
+      header.appendChild(removeBtn);
+
+      const meta = document.createElement("div");
+      meta.className = "ant-item-meta";
+      const heading = item.config.heading || "north";
+      meta.textContent = `pos (${item.config.x}, ${item.config.y}, ${item.config.z}) • rule ${item.config.rule} • ${heading} • +${item.delay} steps`;
+
+      const swatches = document.createElement("div");
+      swatches.className = "ant-swatches";
+      (item.config.colors || []).forEach((hex) => {
+        const swatch = document.createElement("div");
+        swatch.className = "ant-swatch";
+        swatch.style.background = hex;
+        swatches.appendChild(swatch);
+      });
+
+      wrapper.appendChild(header);
+      wrapper.appendChild(meta);
+      wrapper.appendChild(swatches);
+      antList.appendChild(wrapper);
+    });
+  }
 }
 
 const grid = new Map();
@@ -302,17 +456,11 @@ function rotateAnt(ant, token) {
       right.copy(dirOld).multiplyScalar(-1);
       break;
     case "U":
-      dir.copy(upOld);
-      up.copy(dirOld).multiplyScalar(-1);
-      break;
-    case "D":
-      dir.copy(upOld).multiplyScalar(-1);
-      up.copy(dirOld);
-      break;
     case "B":
       dir.copy(dirOld).multiplyScalar(-1);
       right.copy(rightOld).multiplyScalar(-1);
       break;
+    case "N":
     case "F":
     default:
       break;
@@ -335,7 +483,9 @@ function stepAnt(ant) {
 }
 
 function stepSimulation() {
+  flushSpawnQueue();
   ants.forEach((ant) => stepAnt(ant));
+  state.stepCount += 1;
 }
 
 function resetInstances() {
@@ -455,6 +605,7 @@ function resetSimulation() {
   grid.clear();
   setAnts(state.antConfigs);
   state.stepCount = 0;
+  buildSpawnQueue();
   resetInstances();
   updateInstances();
   updateAntMeshes();
@@ -494,7 +645,7 @@ const presets = [
   },
   {
     name: "Scheduled Spawn",
-    description: "Original preset with both ants starting together.",
+    description: "Second ant joins after a delay.",
     speed: 3,
     rule: "LR",
     ants: [
@@ -505,6 +656,8 @@ const presets = [
         z: 25,
         rule: "LRRL",
         colors: ["#0a0c10", "#486084", "#8c916f", "#324683"],
+        spawnAt: 1500,
+        heading: "north",
       },
     ],
   },
@@ -570,8 +723,8 @@ const presets = [
     description: "Two mirrored ants produce an inkblot symmetry.",
     speed: 4,
     ants: [
-      { x: -1, y: 0, z: 0, rule: "RL", baseHue: 140 },
-      { x: 1, y: 0, z: 0, rule: "RL", baseHue: 40 },
+      { x: -1, y: 0, z: 0, rule: "RL", baseHue: 140, heading: "north" },
+      { x: 1, y: 0, z: 0, rule: "RL", baseHue: 40, heading: "north" },
     ],
   },
   {
@@ -580,8 +733,8 @@ const presets = [
     description: "A second ant intercepts the highway and resets chaos.",
     speed: 4,
     ants: [
-      { x: 0, y: 0, z: 0, rule: "RL", baseHue: 130 },
-      { x: 30, y: 30, z: 0, rule: "RL", baseHue: 10 },
+      { x: 0, y: 0, z: 0, rule: "RL", baseHue: 130, heading: "north" },
+      { x: 30, y: 0, z: 30, rule: "RL", baseHue: 10, heading: "west" },
     ],
   },
   {
@@ -590,10 +743,10 @@ const presets = [
     description: "Four ants with rotational symmetry form a galaxy-like burst.",
     speed: 3,
     ants: [
-      { x: 0, y: 10, z: 0, rule: "RL", baseHue: 210 },
-      { x: 0, y: -10, z: 0, rule: "RL", baseHue: 30 },
-      { x: 10, y: 0, z: 0, rule: "RL", baseHue: 120 },
-      { x: -10, y: 0, z: 0, rule: "RL", baseHue: 300 },
+      { x: 0, y: 0, z: 10, rule: "RL", baseHue: 210, heading: "south" },
+      { x: 0, y: 0, z: -10, rule: "RL", baseHue: 30, heading: "north" },
+      { x: 10, y: 0, z: 0, rule: "RL", baseHue: 120, heading: "west" },
+      { x: -10, y: 0, z: 0, rule: "RL", baseHue: 300, heading: "east" },
     ],
   },
 ];
@@ -614,18 +767,27 @@ function resolvePresetColors(source, rule, fallback) {
 function applyPreset(preset) {
   if (!preset) return;
   let antConfigs = [];
+  let scheduledConfigs = [];
   if (Array.isArray(preset.ants) && preset.ants.length) {
     antConfigs = preset.ants.map((ant) => {
       const rule = sanitizeRule(ant.rule || preset.rule || "LR");
       const colors = resolvePresetColors(ant, rule, preset);
-      return {
+      const config = {
         x: Number(ant.x) || 0,
-        y: Number(ant.y) || 0,
+        y: 0,
         z: Number(ant.z) || 0,
+        heading: ant.heading || "north",
         rule,
         colors,
       };
+      const spawnAt = Number(ant.spawnAt) || 0;
+      if (spawnAt > 0) {
+        scheduledConfigs.push({ delay: spawnAt, config });
+        return null;
+      }
+      return config;
     });
+    antConfigs = antConfigs.filter(Boolean);
   } else {
     const rule = sanitizeRule(preset.rule || "LR");
     const colors = resolvePresetColors(preset, rule);
@@ -633,6 +795,7 @@ function applyPreset(preset) {
   }
 
   state.antConfigs = antConfigs;
+  state.scheduledConfigs = scheduledConfigs;
   const primary = antConfigs[0];
   state.rule = primary.rule;
   ruleInput.value = primary.rule;
@@ -646,6 +809,7 @@ function applyPreset(preset) {
     presetDescription.textContent = preset.description || "";
   }
   resetSimulation();
+  renderAntList();
 }
 
 function buildPresetOptions() {
@@ -686,6 +850,7 @@ presetSelect?.addEventListener("change", (event) => {
 buildPresetOptions();
 updateRule(ruleInput.value);
 resetSimulation();
+renderAntList();
 
 ruleInput.addEventListener("change", (event) => {
   updateRule(event.target.value);
@@ -697,6 +862,33 @@ speedInput.addEventListener("input", (event) => {
 
 cameraMode.addEventListener("change", (event) => {
   state.followMode = event.target.value;
+});
+
+antForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const rule = sanitizeRule(antRule?.value || state.rule);
+  const x = Number(antX?.value) || 0;
+  const y = Number(antY?.value) || 0;
+  const z = Number(antZ?.value) || 0;
+  const heading = antHeading?.value || "north";
+  const delay = Math.max(0, Number(antSpawnAt?.value) || 0);
+  const mode = antColorMode?.value || "primary";
+  let colors = [];
+  if (mode === "primary") {
+    colors = state.palette.map((c) => colorToHex(c));
+  } else {
+    const hue = 120 + state.antConfigs.length * 40;
+    colors = generatePaletteFromHue(hue, rule.length);
+  }
+  const config = { x, y, z, rule, colors, heading };
+  if (delay > 0) {
+    state.scheduledConfigs.push({ delay, config });
+    buildSpawnQueue();
+  } else {
+    state.antConfigs.push(config);
+  }
+  resetSimulation();
+  renderAntList();
 });
 
 function tick() {

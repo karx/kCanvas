@@ -36,6 +36,7 @@ body {
   top: 18px;
   left: 18px;
   max-width: 320px;
+  max-height: calc(100vh - 36px);
   padding: 18px 18px 16px;
   border-radius: 16px;
   background: var(--panel);
@@ -43,6 +44,7 @@ body {
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow);
   z-index: 10;
+  overflow: auto;
 }
 
 .title h1 {
@@ -163,6 +165,97 @@ button:hover {
   margin-top: 10px;
   font-size: 12px;
   color: rgba(22, 22, 22, 0.7);
+}
+
+.ants {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.ants-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ant-list {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.ant-item {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--panel-border);
+}
+
+.ant-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.ant-item-meta {
+  font-size: 11px;
+  color: rgba(22, 22, 22, 0.7);
+}
+
+.ant-swatches {
+  display: flex;
+  gap: 4px;
+}
+
+.ant-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ant-form {
+  display: grid;
+  gap: 8px;
+}
+
+.ant-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ant-row:last-child {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ant-form button {
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.ant-row:last-child select,
+.ant-row:last-child input,
+.ant-row:last-child button {
+  width: 100%;
+}
+
+#addAntBtn {
+  grid-column: 1 / -1;
+}
+
+.ant-remove {
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
 }
 
 .legend {
