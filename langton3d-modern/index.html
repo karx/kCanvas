@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Langton 3D Termite</title>
+    <meta name="description" content="Langton's ant in 3D with a modern Three.js setup." />
+    <link rel="stylesheet" href="./style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="hud">
+      <div class="title">
+        <h1>Langton 3D Termite</h1>
+        <p>Right/left rules in a 3D lattice.</p>
+      </div>
+      <div class="controls">
+        <label>
+          Rule
+          <input id="ruleInput" value="LR" spellcheck="false" />
+        </label>
+        <label>
+          Preset
+          <select id="presetSelect"></select>
+        </label>
+        <label>
+          Steps per frame
+          <input id="speedInput" type="range" min="1" max="400" value="60" />
+        </label>
+        <label>
+          Camera mode
+          <select id="cameraMode">
+            <option value="off" selected>Free</option>
+            <option value="soft">Follow (soft)</option>
+            <option value="tight">Follow (tight)</option>
+          </select>
+        </label>
+        <div class="buttons">
+          <button id="toggleBtn">Pause</button>
+          <button id="stepBtn">Step</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+      </div>
+      <div class="palette">
+        <div class="palette-title">Token colors</div>
+        <div id="colorGrid" class="color-grid"></div>
+      </div>
+      <div id="presetDescription" class="preset-desc"></div>
+      <div class="stats">
+        <span id="statusRenderer">Renderer: WebGL</span>
+        <span id="statusSteps">Steps: 0</span>
+        <span id="statusCells">Active cells: 0</span>
+      </div>
+      <div class="legend">
+        <strong>Rule tokens:</strong> L, R, U, D, F, B
+      </div>
+    </div>
+    <canvas id="c"></canvas>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

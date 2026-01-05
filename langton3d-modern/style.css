@@ -1,0 +1,178 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap");
+
+:root {
+  color-scheme: light;
+  --ink: #161616;
+  --paper: #f4f1ea;
+  --accent: #e17b2f;
+  --panel: rgba(244, 241, 234, 0.82);
+  --panel-border: rgba(22, 22, 22, 0.12);
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  background: radial-gradient(circle at top, #f7efe0 0%, #f1dfc7 40%, #dfc7a8 100%);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+#c {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+}
+
+#hud {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  max-width: 320px;
+  padding: 18px 18px 16px;
+  border-radius: 16px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  z-index: 10;
+}
+
+.title h1 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+}
+
+.title p {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.controls {
+  display: grid;
+  gap: 10px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+input[type="text"],
+input[type="range"],
+input:not([type]) {
+  width: 100%;
+}
+
+input {
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--ink);
+}
+
+select {
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--ink);
+}
+
+input[type="range"] {
+  padding: 0;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 8px 16px rgba(225, 123, 47, 0.35);
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+.stats {
+  margin-top: 12px;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.palette {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.palette-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.color-item {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.color-item input[type="color"] {
+  width: 100%;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.preset-desc {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(22, 22, 22, 0.7);
+}
+
+.legend {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(22, 22, 22, 0.7);
+}
+
+@media (max-width: 720px) {
+  #hud {
+    max-width: calc(100% - 36px);
+  }
+}
