@@ -25,7 +25,7 @@
     <link rel="manifest" href="/langton3d/site.webmanifest">
 
     <script src="https://aframe.io/releases/0.9.1/aframe.min.js"></script>
-
+     
     <link rel="stylesheet" href="./kaaro.css">
     <title>Langton 3D — Ants, Palettes, Presets</title>
 </head>
@@ -34,10 +34,10 @@
     <a-scene id="mainFrame" background="color: black" renderer="antialias: true; alpha: true; preserveDrawingBuffer: true">
         <a-entity light="type: ambient; color: #EEE"></a-entity>
         <a-entity light="type: point; color: #FFF; intensity: 0.4" position="-1 -10 -2"></a-entity>
-
-        <a-entity id="rig" position="0 0 20">
-            <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true adAxis:y"></a-entity>
-        </a-entity>
+            
+            <a-entity id="rig" position="0 0 20">
+                <a-entity id="camera" camera look-controls wasd-controls="acceleration:199 fly:true adAxis:y"></a-entity>
+            </a-entity>
     </a-scene>
 
     <div class="hud" id="hud">
@@ -45,17 +45,18 @@
             <div class="hud__title">
                 <div class="hud__nameRow">
                     <div class="hud__name">Langton 3D</div>
-                    <a class="hud__link" href="./about.html">About</a>
+                    <a class="hud__link" href="https://github.com/karx/kCanvas/tree/master/langton3d" target="_blank" rel="noopener noreferrer">About</a>
                 </div>
-                <div class="hud__hint">WASD/Arrows + mouse to move • Space pause • N step • R reset • H help</div>
+                <div class="hud__hint">WASD/Arrows + mouse to move • Space pause • N step • R reset</div>
             </div>
             <div class="hud__controls">
                 <button class="hud__btn" id="btn-toggle" type="button">Pause</button>
                 <button class="hud__btn" id="btn-step" type="button">Step</button>
                 <button class="hud__btn hud__btn--danger" id="btn-reset" type="button">Reset</button>
+                <button class="hud__btn" id="btn-fullscreen" type="button" title="Toggle fullscreen">Fullscreen</button>
+                <button class="hud__btn" id="btn-share" type="button" title="Copy a shareable URL preset">Share</button>
                 <button class="hud__btn" id="btn-sharepanel" type="button" title="Open Share/Import panel">Share/Import</button>
                 <button class="hud__btn" id="btn-snapshot" type="button" title="Share/download a snapshot image (includes preset URL)">Snapshot</button>
-                <button class="hud__btn" id="btn-fullscreen" type="button" title="Toggle fullscreen">Fullscreen</button>
                 <button class="hud__btn" id="btn-help" type="button" title="Help and controls">Help</button>
                 <label class="hud__label" title="Simulation steps per frame">
                     Speed
@@ -89,7 +90,7 @@
 
                     <div class="panel">
                         <div class="panel__title">Presets</div>
-                        <div id="presetList"></div>
+                        <div class="presetList" id="presetList"></div>
                     </div>
                 </div>
 
@@ -129,7 +130,7 @@
                         <label class="spawn__label">
                             Colors (hex, matches rule length)
                             <input class="spawn__input" id="spawnColors" type="text" value="#12130f #5b9279 #eae6e5 #8fcb9b" />
-                            <div class="spawn__help">Palette controls display colors this ant paints; behavior uses shared cell state.</div>
+                            <div class="spawn__help">If a cell color isn't in this palette, this ant treats it as state 0.</div>
                         </label>
                     </div>
                     <div class="spawn__row">
@@ -137,7 +138,7 @@
                             Rule (space/comma separated)
                             <input class="spawn__input" id="spawnRule" type="text" value="L R R L" />
                         </label>
-                        <div class="spawn__help">Example: <code>L R</code> or <code>LLRR</code> (states = token count)</div>
+                        <div class="spawn__help">Example: <code>L R</code> or <code>L R R L</code> (states = token count)</div>
                     </div>
                     <div class="spawn__row spawn__row--actions">
                         <button class="hud__btn" id="btn-spawn" type="submit">Spawn</button>
@@ -162,7 +163,7 @@
                         <li>Pause/Play: Space</li>
                         <li>Single step: N</li>
                         <li>Reset: R</li>
-                        <li>Help: H or ?</li>
+                        <li>Ant drawer: always visible (right)</li>
                     </ul>
                 </div>
                 <div class="modal__section">
@@ -175,7 +176,7 @@
                 <div class="modal__section">
                     <div class="modal__sectionTitle">Sharing</div>
                     <div class="modal__text">
-                        Use Share to copy a URL that encodes the current setup. Use Share/Import to browse presets and import links.
+                        Use Share to copy a URL that encodes the current setup (ants + palettes + spawn ticks + speed).
                         Snapshot downloads/shares an image and also copies the URL.
                     </div>
                 </div>
@@ -186,15 +187,8 @@
             </div>
         </div>
     </div>
-
-    <div class="loadingOverlay" id="loadingOverlay" aria-hidden="true">
-        <div class="loadingOverlay__card" role="status" aria-live="polite">
-            <div class="loadingSpinner" aria-hidden="true"></div>
-            <div class="loadingOverlay__text" id="loadingText">Loading…</div>
-        </div>
-    </div>
-
-    <script src="./kaaro.js"></script>
+    
+    <script  src="./kaaro.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,9 @@
+{
+  "name": "Langton 3D",
+  "short_name": "Langton3D",
+  "start_url": "/langton3d/kaaro.html",
+  "display": "standalone",
+  "background_color": "#0a0c10",
+  "theme_color": "#0a0c10",
+  "description": "3D Langton's Ant / Turmites with live management, palettes, and shareable presets."
+}
