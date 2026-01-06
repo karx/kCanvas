@@ -78,6 +78,18 @@
           </div>
         </form>
       </div>
+      <div class="exports">
+        <div class="exports-title">Export</div>
+        <div class="exports-row">
+          <button id="exportGltfBtn" type="button">Export GLTF</button>
+          <button id="exportPngBtn" type="button">Export PNG</button>
+        </div>
+        <div class="exports-row">
+          <input id="shareUrlOutput" readonly />
+          <button id="copyShareBtn" type="button">Copy Share URL</button>
+        </div>
+        <div id="exportStatus" class="export-status"></div>
+      </div>
       <div id="presetDescription" class="preset-desc"></div>
       <div class="stats">
         <span id="statusRenderer">Renderer: WebGL</span>

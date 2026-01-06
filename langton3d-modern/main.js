@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const canvas = document.getElementById("c");
 const statusRenderer = document.getElementById("statusRenderer");
@@ -24,6 +26,11 @@ const antSpawnAt = document.getElementById("antSpawnAt");
 const toggleBtn = document.getElementById("toggleBtn");
 const stepBtn = document.getElementById("stepBtn");
 const resetBtn = document.getElementById("resetBtn");
+const exportGltfBtn = document.getElementById("exportGltfBtn");
+const exportPngBtn = document.getElementById("exportPngBtn");
+const copyShareBtn = document.getElementById("copyShareBtn");
+const shareUrlOutput = document.getElementById("shareUrlOutput");
+const exportStatus = document.getElementById("exportStatus");
 
 const scene = new THREE.Scene();
 scene.background = null;
@@ -116,7 +123,7 @@ const state = {
 };
 
 function sanitizeRule(value) {
-  const tokens = value.toUpperCase().replace(/[^LRNUFB]/g, "");
+  const tokens = value.toUpperCase().replace(/[^LRNU]/g, "");
   return tokens.length ? tokens : "LR";
 }
 
@@ -425,6 +432,241 @@ function renderAntList() {
   }
 }
 
+function buildStartingConfig() {
+  const antsPayload = state.antConfigs.map((ant) => ({
+    x: ant.x,
+    y: ant.y,
+    z: ant.z,
+    heading: ant.heading || "north",
+    rule: ant.rule,
+    colors: ant.colors || [],
+    spawnAt: 0,
+  }));
+  state.scheduledConfigs.forEach((item) => {
+    antsPayload.push({
+      x: item.config.x,
+      y: item.config.y,
+      z: item.config.z,
+      heading: item.config.heading || "north",
+      rule: item.config.rule,
+      colors: item.config.colors || [],
+      spawnAt: item.delay,
+    });
+  });
+  return {
+    version: 1,
+    sim: {
+      stepsPerFrame: state.stepsPerFrame,
+    },
+    ants: antsPayload,
+  };
+}
+
+function base64UrlEncode(text) {
+  const b64 = btoa(unescape(encodeURIComponent(String(text))));
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlDecode(text) {
+  const padded = String(text).replace(/-/g, "+").replace(/_/g, "/");
+  const withPadding = padded.padEnd(Math.ceil(padded.length / 4) * 4, "=");
+  return decodeURIComponent(escape(atob(withPadding)));
+}
+
+function buildShareUrl() {
+  const baseUrl = new URL(window.location.href);
+  baseUrl.search = "";
+  baseUrl.hash = "";
+  const encoded = base64UrlEncode(JSON.stringify(buildStartingConfig()));
+  baseUrl.searchParams.set("p", encoded);
+  return baseUrl.toString();
+}
+
+function updateShareUrlOutput() {
+  if (!shareUrlOutput) return;
+  shareUrlOutput.value = buildShareUrl();
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function computeBounds() {
+  const items = grid.size > 0 ? Array.from(grid.values()) : ants;
+  if (items.length === 0) {
+    return { minX: -5, maxX: 5, minZ: -5, maxZ: 5, centerX: 0, centerZ: 0 };
+  }
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  items.forEach((item) => {
+    const x = item.position ? item.position.x : item.x;
+    const z = item.position ? item.position.z : item.z;
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minZ = Math.min(minZ, z);
+    maxZ = Math.max(maxZ, z);
+  });
+  const centerX = (minX + maxX) * 0.5;
+  const centerZ = (minZ + maxZ) * 0.5;
+  return { minX, maxX, minZ, maxZ, centerX, centerZ };
+}
+
+function exportTopViewPng() {
+  const bounds = computeBounds();
+  const width = Math.max(10, bounds.maxX - bounds.minX + 2);
+  const depth = Math.max(10, bounds.maxZ - bounds.minZ + 2);
+  const maxExtent = Math.max(width, depth);
+  const fov = THREE.MathUtils.degToRad(camera.fov);
+  let distance = (maxExtent * 0.5) / Math.tan(fov / 2);
+  distance *= 1.4;
+  distance = THREE.MathUtils.clamp(distance, 10, 600);
+
+  const exportCamera = new THREE.PerspectiveCamera(
+    camera.fov,
+    camera.aspect,
+    camera.near,
+    camera.far
+  );
+  exportCamera.position.set(bounds.centerX, distance, bounds.centerZ);
+  exportCamera.up.set(0, 0, -1);
+  exportCamera.lookAt(bounds.centerX, 0, bounds.centerZ);
+
+  renderer.render(scene, exportCamera);
+  const dataUrl = renderer.domElement.toDataURL("image/png");
+  const bytes = atob(dataUrl.split(",")[1]);
+  const array = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i += 1) {
+    array[i] = bytes.charCodeAt(i);
+  }
+  downloadBlob(new Blob([array], { type: "image/png" }), "langton3d.png");
+}
+
+function exportGltf() {
+  return new Promise((resolve, reject) => {
+  const exportScene = new THREE.Scene();
+  const cells = Array.from(grid.values());
+  const buckets = new Map();
+  cells.forEach((cell) => {
+    const colorHex = (cell.color || "#12130f").toLowerCase();
+    if (!buckets.has(colorHex)) buckets.set(colorHex, []);
+    buckets.get(colorHex).push(cell);
+  });
+  buckets.forEach((bucket, colorHex) => {
+    const geometries = [];
+    bucket.forEach((cell) => {
+      const geo = cubeGeometry.clone();
+      geo.applyMatrix4(
+        new THREE.Matrix4().makeTranslation(cell.x, cell.y, cell.z)
+      );
+      geometries.push(geo);
+    });
+    if (geometries.length === 0) return;
+    const merged = mergeGeometries(geometries, false);
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(colorHex),
+      metalness: 0.05,
+      roughness: 0.65,
+    });
+    exportScene.add(new THREE.Mesh(merged, material));
+  });
+  ants.forEach((ant) => {
+    const clone = ant.mesh.clone();
+    clone.position.copy(ant.mesh.position);
+    clone.quaternion.copy(ant.mesh.quaternion);
+    exportScene.add(clone);
+  });
+
+  const exporter = new GLTFExporter();
+  exporter.parse(
+    exportScene,
+    (result) => {
+      const output =
+        result instanceof ArrayBuffer ? result : JSON.stringify(result, null, 2);
+      const blob = new Blob([output], { type: "model/gltf+json" });
+      downloadBlob(blob, "langton3d.gltf");
+      resolve();
+    },
+    (error) => {
+      reject(error);
+    },
+    { binary: false }
+  );
+  });
+}
+
+function applyStartingConfig(config) {
+  if (!config || !Array.isArray(config.ants)) {
+    return false;
+  }
+  const antConfigs = [];
+  const scheduledConfigs = [];
+  config.ants.forEach((ant) => {
+    const rule = sanitizeRule(ant.rule || "LR");
+    const colors = Array.isArray(ant.colors) && ant.colors.length
+      ? ant.colors
+      : buildPalette(rule.length).map((c) => colorToHex(c));
+    const cfg = {
+      x: Number(ant.x) || 0,
+      y: Number(ant.y) || 0,
+      z: Number(ant.z) || 0,
+      heading: ant.heading || "north",
+      rule,
+      colors,
+    };
+    const spawnAt = Number(ant.spawnAt) || 0;
+    if (spawnAt > 0) {
+      scheduledConfigs.push({ delay: spawnAt, config: cfg });
+    } else {
+      antConfigs.push(cfg);
+    }
+  });
+
+  state.antConfigs = antConfigs.length ? antConfigs : state.antConfigs;
+  state.scheduledConfigs = scheduledConfigs;
+
+  const primary = state.antConfigs[0];
+  state.rule = primary.rule;
+  ruleInput.value = primary.rule;
+  const palette = primary.colors.map((hex) => new THREE.Color(hex));
+  resetInstances();
+  rebuildColorInputs(palette);
+
+  const steps = Number(config.sim?.stepsPerFrame);
+  if (Number.isFinite(steps)) {
+    state.stepsPerFrame = Math.max(1, Math.min(400, steps));
+    speedInput.value = String(state.stepsPerFrame);
+  }
+  resetSimulation();
+  renderAntList();
+  updateShareUrlOutput();
+  return true;
+}
+
+function loadFromShareUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get("p");
+    if (!encoded) return false;
+    const json = base64UrlDecode(encoded);
+    const payload = JSON.parse(json);
+    return applyStartingConfig(payload);
+  } catch (err) {
+    if (exportStatus) {
+      exportStatus.textContent = "Failed to load share URL.";
+    }
+    return false;
+  }
+}
+
 const grid = new Map();
 
 function keyFor(x, y, z) {
@@ -609,6 +851,7 @@ function resetSimulation() {
   resetInstances();
   updateInstances();
   updateAntMeshes();
+  updateShareUrlOutput();
 }
 
 const presets = [
@@ -810,6 +1053,7 @@ function applyPreset(preset) {
   }
   resetSimulation();
   renderAntList();
+  updateShareUrlOutput();
 }
 
 function buildPresetOptions() {
@@ -851,6 +1095,7 @@ buildPresetOptions();
 updateRule(ruleInput.value);
 resetSimulation();
 renderAntList();
+loadFromShareUrl();
 
 ruleInput.addEventListener("change", (event) => {
   updateRule(event.target.value);
@@ -889,6 +1134,51 @@ antForm?.addEventListener("submit", (event) => {
   }
   resetSimulation();
   renderAntList();
+  updateShareUrlOutput();
+});
+
+exportGltfBtn?.addEventListener("click", () => {
+  if (exportStatus) {
+    exportStatus.textContent = "Exporting GLTF...";
+  }
+  exportGltf()
+    .then(() => {
+      if (exportStatus) {
+        exportStatus.textContent = "GLTF exported.";
+      }
+    })
+    .catch((error) => {
+      if (exportStatus) {
+        exportStatus.textContent = `Export failed: ${error?.message || error}`;
+      }
+    });
+});
+
+exportPngBtn?.addEventListener("click", () => {
+  if (exportStatus) {
+    exportStatus.textContent = "Exporting PNG...";
+  }
+  exportTopViewPng();
+  if (exportStatus) {
+    exportStatus.textContent = "PNG exported.";
+  }
+});
+
+copyShareBtn?.addEventListener("click", async () => {
+  const url = buildShareUrl();
+  updateShareUrlOutput();
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+      if (exportStatus) {
+        exportStatus.textContent = "Share URL copied.";
+      }
+      return;
+    }
+  } catch (err) {}
+  if (exportStatus) {
+    exportStatus.textContent = "Copy failed.";
+  }
 });
 
 function tick() {

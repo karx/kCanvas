@@ -26,7 +26,8 @@ Example rules:
 - Steps per frame to speed up or slow down.
 - Follow ant to keep the camera centered.
 - Pause, Step, Reset.
- - Ants panel lets you add ants, set heading, and schedule spawns.
+- Ants panel lets you add ants, set heading, and schedule spawns.
+ - Export panel lets you download a GLTF, a top-view PNG, and a share URL for the starting config.
 
 ## Notes
 - WebGPU is used automatically if available; otherwise it falls back to WebGL.
