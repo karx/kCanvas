@@ -60,7 +60,7 @@
                 <button class="hud__btn" id="btn-help" type="button" title="Help and controls">Help</button>
                 <label class="hud__label" title="Simulation steps per frame">
                     Speed
-                    <input id="speed" type="range" min="1" max="30" value="1" />
+                    <input id="speed" type="range" min="1" max="30" value="1" aria-label="Simulation Speed" />
                     <span class="hud__value" id="speedValue">1</span>
                 </label>
                 <div class="hud__stat" id="simStatus"></div>
@@ -78,11 +78,11 @@
                     <div class="panel">
                         <div class="panel__title">Share</div>
                         <div class="panel__row">
-                            <input class="panel__input" id="shareUrl" type="text" readonly value="" />
+                            <input class="panel__input" id="shareUrl" type="text" readonly value="" aria-label="Shareable URL" />
                             <button class="hud__btn" id="btn-copy-share" type="button">Copy</button>
                         </div>
                         <div class="panel__row">
-                            <input class="panel__input" id="loadPreset" type="text" placeholder="Paste a shared URL or ?p=..." />
+                            <input class="panel__input" id="loadPreset" type="text" placeholder="Paste a shared URL or ?p=..." aria-label="Load preset" />
                             <button class="hud__btn" id="btn-load-preset" type="button">Load</button>
                         </div>
                         <div class="panel__hint">Copy/share the URL. Paste a URL/preset to load without reloading the page.</div>
