@@ -1,0 +1,3 @@
+127.0.0.1 - - [15/Jan/2026 08:26:42] "GET /langton3d/kaaro.html HTTP/1.1" 200 -
+127.0.0.1 - - [15/Jan/2026 08:26:43] "GET /langton3d/kaaro.css HTTP/1.1" 200 -
+127.0.0.1 - - [15/Jan/2026 08:26:43] "GET /langton3d/kaaro.js HTTP/1.1" 200 -
