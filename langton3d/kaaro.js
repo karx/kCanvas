@@ -481,8 +481,10 @@ function setupHud() {
         renderHud(true);
     });
 
+    toggleSpawnEl.setAttribute('aria-expanded', 'false');
     toggleSpawnEl.addEventListener('click', () => {
-        spawnFormEl.classList.toggle('is-open');
+        var isOpen = spawnFormEl.classList.toggle('is-open');
+        toggleSpawnEl.setAttribute('aria-expanded', String(isOpen));
     });
 
     function syncFullscreenUi() {
@@ -529,8 +531,10 @@ function setupHud() {
             sharePanelEl.classList.remove('is-open');
             sharePanelEl.setAttribute('aria-hidden', 'true');
         }
+        sharePanelBtnEl.setAttribute('aria-expanded', String(shouldOpen));
     }
 
+    sharePanelBtnEl.setAttribute('aria-expanded', 'false');
     sharePanelBtnEl.addEventListener('click', () => toggleSharePanel());
 
     copyShareEl.addEventListener('click', async () => {
