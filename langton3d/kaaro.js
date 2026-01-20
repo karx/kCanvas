@@ -482,7 +482,11 @@ function setupHud() {
     });
 
     toggleSpawnEl.addEventListener('click', () => {
-        spawnFormEl.classList.toggle('is-open');
+        var isOpen = spawnFormEl.classList.toggle('is-open');
+        if (isOpen) {
+            var nameInput = document.getElementById('spawnName');
+            if (nameInput) nameInput.focus();
+        }
     });
 
     function syncFullscreenUi() {
@@ -682,6 +686,7 @@ function setupHud() {
         helpModalEl.classList.add('is-open');
         helpModalEl.setAttribute('aria-hidden', 'false');
         helpDontShowEl.checked = (localStorage.getItem('langton3d_help_dont_show') === '1');
+        if (helpCloseEl) helpCloseEl.focus();
     }
 
     function closeHelpModal() {
@@ -689,6 +694,7 @@ function setupHud() {
         helpModalEl.setAttribute('aria-hidden', 'true');
         if (helpDontShowEl.checked) localStorage.setItem('langton3d_help_dont_show', '1');
         else localStorage.removeItem('langton3d_help_dont_show');
+        if (helpBtnEl) helpBtnEl.focus();
     }
 
     helpBtnEl.addEventListener('click', () => openHelpModal());
