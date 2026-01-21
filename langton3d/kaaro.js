@@ -568,7 +568,11 @@ function setupHud() {
 
     snapshotEl.addEventListener('click', async () => {
         var shareUrl = buildShareUrl();
+        var originalText = snapshotEl.textContent;
         try {
+            snapshotEl.textContent = 'Snapping...';
+            snapshotEl.disabled = true;
+
             var didEnter = await maybeEnterFullscreenForShare();
             await delay(90);
             var file = await captureSceneSnapshotFile('langton3d.png');
@@ -579,6 +583,8 @@ function setupHud() {
                     url: shareUrl,
                     files: [file]
                 });
+                snapshotEl.textContent = originalText;
+                snapshotEl.disabled = false;
                 await maybeExitFullscreenAfterShare(didEnter);
                 return;
             }
@@ -586,13 +592,20 @@ function setupHud() {
                 downloadFile(file, 'langton3d.png');
                 await copyTextToClipboard(shareUrl);
                 snapshotEl.textContent = 'Downloaded';
-                setTimeout(() => { snapshotEl.textContent = 'Snapshot'; }, 900);
+                setTimeout(() => {
+                    snapshotEl.textContent = originalText;
+                    snapshotEl.disabled = false;
+                }, 900);
                 await maybeExitFullscreenAfterShare(didEnter);
                 return;
             }
+            snapshotEl.textContent = originalText;
+            snapshotEl.disabled = false;
             await maybeExitFullscreenAfterShare(didEnter);
             console.warn('Snapshot capture failed; preset URL:', shareUrl);
         } catch (err) {
+            snapshotEl.textContent = originalText;
+            snapshotEl.disabled = false;
             console.warn('Snapshot failed', err);
             await maybeExitFullscreenAfterShare(false);
             console.warn('Preset URL:', shareUrl);
