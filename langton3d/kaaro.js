@@ -567,6 +567,10 @@ function setupHud() {
     });
 
     snapshotEl.addEventListener('click', async () => {
+        var originalText = snapshotEl.textContent;
+        snapshotEl.textContent = 'Snapping...';
+        snapshotEl.disabled = true;
+
         var shareUrl = buildShareUrl();
         try {
             var didEnter = await maybeEnterFullscreenForShare();
@@ -580,22 +584,29 @@ function setupHud() {
                     files: [file]
                 });
                 await maybeExitFullscreenAfterShare(didEnter);
+                snapshotEl.textContent = originalText;
+                snapshotEl.disabled = false;
                 return;
             }
             if (file) {
                 downloadFile(file, 'langton3d.png');
                 await copyTextToClipboard(shareUrl);
                 snapshotEl.textContent = 'Downloaded';
-                setTimeout(() => { snapshotEl.textContent = 'Snapshot'; }, 900);
+                snapshotEl.disabled = false;
+                setTimeout(() => { snapshotEl.textContent = originalText; }, 900);
                 await maybeExitFullscreenAfterShare(didEnter);
                 return;
             }
             await maybeExitFullscreenAfterShare(didEnter);
             console.warn('Snapshot capture failed; preset URL:', shareUrl);
+            snapshotEl.textContent = originalText;
+            snapshotEl.disabled = false;
         } catch (err) {
             console.warn('Snapshot failed', err);
             await maybeExitFullscreenAfterShare(false);
             console.warn('Preset URL:', shareUrl);
+            snapshotEl.textContent = originalText;
+            snapshotEl.disabled = false;
         }
     });
 
