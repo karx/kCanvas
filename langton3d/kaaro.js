@@ -567,9 +567,14 @@ function setupHud() {
     });
 
     snapshotEl.addEventListener('click', async () => {
+        snapshotEl.disabled = true;
+        snapshotEl.textContent = 'Snapping...';
+        snapshotEl.style.opacity = '0.7';
+
         var shareUrl = buildShareUrl();
+        var didEnter = false;
         try {
-            var didEnter = await maybeEnterFullscreenForShare();
+            didEnter = await maybeEnterFullscreenForShare();
             await delay(90);
             var file = await captureSceneSnapshotFile('langton3d.png');
             if (navigator.share && file) {
@@ -580,12 +585,15 @@ function setupHud() {
                     files: [file]
                 });
                 await maybeExitFullscreenAfterShare(didEnter);
+                resetSnapshotBtn();
                 return;
             }
             if (file) {
                 downloadFile(file, 'langton3d.png');
                 await copyTextToClipboard(shareUrl);
                 snapshotEl.textContent = 'Downloaded';
+                snapshotEl.disabled = false;
+                snapshotEl.style.opacity = '';
                 setTimeout(() => { snapshotEl.textContent = 'Snapshot'; }, 900);
                 await maybeExitFullscreenAfterShare(didEnter);
                 return;
@@ -594,8 +602,15 @@ function setupHud() {
             console.warn('Snapshot capture failed; preset URL:', shareUrl);
         } catch (err) {
             console.warn('Snapshot failed', err);
-            await maybeExitFullscreenAfterShare(false);
+            await maybeExitFullscreenAfterShare(didEnter);
             console.warn('Preset URL:', shareUrl);
+        }
+        resetSnapshotBtn();
+
+        function resetSnapshotBtn() {
+            snapshotEl.disabled = false;
+            snapshotEl.textContent = 'Snapshot';
+            snapshotEl.style.opacity = '';
         }
     });
 
