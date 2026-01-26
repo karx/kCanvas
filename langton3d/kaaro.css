@@ -99,6 +99,11 @@ body {
     background: rgba(255, 255, 255, 0.1);
 }
 
+.hud__btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .hud__btn--danger {
     border-color: rgba(255, 86, 86, 0.35);
 }
