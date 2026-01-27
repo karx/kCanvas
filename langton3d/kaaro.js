@@ -521,6 +521,7 @@ function setupHud() {
 
     function toggleSharePanel(forceOpen) {
         var shouldOpen = (typeof forceOpen === 'boolean') ? forceOpen : !sharePanelEl.classList.contains('is-open');
+        sharePanelBtnEl.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
         if (shouldOpen) {
             sharePanelEl.classList.add('is-open');
             sharePanelEl.setAttribute('aria-hidden', 'false');
@@ -567,6 +568,11 @@ function setupHud() {
     });
 
     snapshotEl.addEventListener('click', async () => {
+        if (snapshotEl.disabled) return;
+        snapshotEl.disabled = true;
+        var prevText = snapshotEl.textContent;
+        snapshotEl.textContent = 'Snapping...';
+
         var shareUrl = buildShareUrl();
         try {
             var didEnter = await maybeEnterFullscreenForShare();
@@ -580,12 +586,15 @@ function setupHud() {
                     files: [file]
                 });
                 await maybeExitFullscreenAfterShare(didEnter);
+                snapshotEl.textContent = prevText;
+                snapshotEl.disabled = false;
                 return;
             }
             if (file) {
                 downloadFile(file, 'langton3d.png');
                 await copyTextToClipboard(shareUrl);
                 snapshotEl.textContent = 'Downloaded';
+                snapshotEl.disabled = false;
                 setTimeout(() => { snapshotEl.textContent = 'Snapshot'; }, 900);
                 await maybeExitFullscreenAfterShare(didEnter);
                 return;
@@ -597,6 +606,8 @@ function setupHud() {
             await maybeExitFullscreenAfterShare(false);
             console.warn('Preset URL:', shareUrl);
         }
+        snapshotEl.textContent = 'Snapshot';
+        snapshotEl.disabled = false;
     });
 
     spawnFormEl.addEventListener('submit', (event) => {
