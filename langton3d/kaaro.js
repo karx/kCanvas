@@ -482,7 +482,11 @@ function setupHud() {
     });
 
     toggleSpawnEl.addEventListener('click', () => {
-        spawnFormEl.classList.toggle('is-open');
+        var isOpen = spawnFormEl.classList.toggle('is-open');
+        if (isOpen) {
+            var nameInput = document.getElementById('spawnName');
+            if (nameInput) nameInput.focus();
+        }
     });
 
     function syncFullscreenUi() {
@@ -568,6 +572,10 @@ function setupHud() {
 
     snapshotEl.addEventListener('click', async () => {
         var shareUrl = buildShareUrl();
+        var originalText = snapshotEl.textContent;
+        snapshotEl.disabled = true;
+        snapshotEl.textContent = 'Snapping...';
+
         try {
             var didEnter = await maybeEnterFullscreenForShare();
             await delay(90);
@@ -596,6 +604,11 @@ function setupHud() {
             console.warn('Snapshot failed', err);
             await maybeExitFullscreenAfterShare(false);
             console.warn('Preset URL:', shareUrl);
+        } finally {
+            snapshotEl.disabled = false;
+            if (snapshotEl.textContent === 'Snapping...') {
+                snapshotEl.textContent = originalText;
+            }
         }
     });
 
