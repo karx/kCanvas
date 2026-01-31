@@ -568,6 +568,9 @@ function setupHud() {
 
     snapshotEl.addEventListener('click', async () => {
         var shareUrl = buildShareUrl();
+        snapshotEl.disabled = true;
+        snapshotEl.textContent = 'Snapping...';
+
         try {
             var didEnter = await maybeEnterFullscreenForShare();
             await delay(90);
@@ -580,12 +583,15 @@ function setupHud() {
                     files: [file]
                 });
                 await maybeExitFullscreenAfterShare(didEnter);
+                snapshotEl.disabled = false;
+                snapshotEl.textContent = 'Snapshot';
                 return;
             }
             if (file) {
                 downloadFile(file, 'langton3d.png');
                 await copyTextToClipboard(shareUrl);
                 snapshotEl.textContent = 'Downloaded';
+                snapshotEl.disabled = false;
                 setTimeout(() => { snapshotEl.textContent = 'Snapshot'; }, 900);
                 await maybeExitFullscreenAfterShare(didEnter);
                 return;
@@ -597,6 +603,8 @@ function setupHud() {
             await maybeExitFullscreenAfterShare(false);
             console.warn('Preset URL:', shareUrl);
         }
+        snapshotEl.disabled = false;
+        snapshotEl.textContent = 'Snapshot';
     });
 
     spawnFormEl.addEventListener('submit', (event) => {
